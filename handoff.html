@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenAI Agents in Pyodide Test</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="password"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover { background: #005a8b; }
+        button:disabled { 
+            background: #ccc; 
+            cursor: not-allowed; 
+        }
+        #output {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            min-height: 200px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        
+        .example-prompts {
+            margin: 10px 0;
+        }
+        .example-prompts button {
+            background: #6c757d;
+            font-size: 12px;
+            padding: 6px 12px;
+            margin: 2px;
+        }
+        .example-prompts button:hover { background: #5a6268; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 OpenAI Agents in Pyodide Test</h1>
+        
+        <div class="input-group">
+            <label for="apiKey">OpenAI API Key:</label>
+            <input type="password" id="apiKey" placeholder="sk-..." />
+            <small style="color: #666;">Your API key is only used locally in your browser</small>
+        </div>
+        
+        <div class="input-group">
+            <label for="prompt">Custom Prompt:</label>
+            <textarea id="prompt" placeholder="Enter your prompt here...">Tell me about recursion in programming.</textarea>
+            
+            <div class="example-prompts">
+                <small>Quick examples:</small>
+                <button onclick="setPrompt('Tell me about recursion in programming.')">Recursion</button>
+                <button onclick="setPrompt('Write a poem about artificial intelligence.')">AI Poem</button>
+                <button onclick="setPrompt('Explain quantum computing in simple terms.')">Quantum Computing</button>
+                <button onclick="setPrompt('What is the meaning of life?')">Philosophy</button>
+            </div>
+        </div>
+        
+        <button onclick="runExperiment()" id="runBtn">🚀 Run OpenAI Agents Test</button>
+        <button onclick="clearOutput()" id="clearBtn" disabled>🗑️ Clear Output</button>
+        
+        <div id="output">Click "Run OpenAI Agents Test" to start the experiment...</div>
+    </div>
+
+    <script>
+        let pyodide;
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            let prefix = '';
+            switch(type) {
+                case 'success': prefix = '✅'; break;
+                case 'error': prefix = '❌'; break;
+                case 'warning': prefix = '⚠️'; break;
+                case 'info': prefix = 'ℹ️'; break;
+            }
+            
+            output.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function setPrompt(text) {
+            document.getElementById('prompt').value = text;
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').textContent = '';
+        }
+        
+        async function runExperiment() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const prompt = document.getElementById('prompt').value.trim();
+            
+            if (!apiKey) {
+                log("Please enter your OpenAI API key", 'error');
+                return;
+            }
+            
+            if (!apiKey.startsWith('sk-')) {
+                log("API key should start with 'sk-'", 'error');
+                return;
+            }
+            
+            if (!prompt) {
+                log("Please enter a prompt", 'error');
+                return;
+            }
+            
+            // Disable button during execution
+            document.getElementById('runBtn').disabled = true;
+            document.getElementById('clearBtn').disabled = false;
+            
+            try {
+                log("🔄 Loading Pyodide...");
+                pyodide = await loadPyodide();
+                log("Pyodide loaded successfully", 'success');
+                
+                log("📦 Loading micropip...");
+                await pyodide.loadPackage("micropip");
+                log("micropip loaded", 'success');
+                
+                log("📦 Installing openai-agents (this may take a moment)...");
+                await pyodide.runPythonAsync(`
+import micropip
+await micropip.install("openai-agents")
+                `);
+                log("openai-agents installed successfully", 'success');
+                
+                log("🚫 Disabling tracing to avoid threading issues...");
+                await pyodide.runPythonAsync(`
+from agents import set_tracing_disabled
+set_tracing_disabled(True)
+                `);
+                log("Tracing disabled", 'success');
+                
+                log("🤖 Setting up agent and running...");
+                log(`Prompt: "${prompt}"`);
+                
+                // First, let's just run the agent and print everything in Python
+                const result = await  pyodide.runPythonAsync(`
+import asyncio
+import os
+from agents import Agent, Runner
+
+# Set API key in environment
+os.environ['OPENAI_API_KEY'] = "${apiKey}"
+
+async def test_agent():
+    print("=== STARTING AGENT TEST ===")
+    try:
+        # Create agent
+        print("Creating agents...")
+        spanish_agent = Agent(
+            name="Spanish agent",
+            instructions="You only speak Spanish, and you do it in rhymes.",
+        )
+
+        english_agent = Agent(
+            name="English agent",
+            instructions="You only speak English, and you do it in haikus.",
+        )
+
+        triage_agent = Agent(
+            name="Triage agent",
+            instructions="Handoff to the appropriate agent based on the language of the request.",
+            handoffs=[spanish_agent, english_agent],
+        )
+        print(f"Agent created: {triage_agent}")
+
+        # Run the agent
+        print("Running agent...")
+        result = await Runner.run(triage_agent, """${prompt.replace(/"/g, '\\"')}""")
+        print(f"Agent run completed!")
+        print(f"Result type: {type(result)}")
+        print(f"Result: {result}")
+        
+        # Try to access final_output
+        if hasattr(result, 'final_output'):
+            print(f"Final output: {result.final_output}")
+            print(f"Final output type: {type(result.final_output)}")
+            return str(result.final_output)
+        else:
+            print("No final_output attribute found")
+            print(f"Available attributes: {dir(result)}")
+            return ""
+        print("=== AGENT TEST COMPLETED ===")
+        
+    except Exception as e:
+        print(f"=== AGENT TEST FAILED ===")
+        print(f"Error: {e}")
+        import traceback
+        print("Traceback:")
+        print(traceback.format_exc())
+
+# Run the test
+final_result = await test_agent()
+final_result
+                `);
+                
+                // Display the result
+                if (typeof result === 'string' && result.length > 0 && !result.startsWith('Error:')) {
+                    log("🎉 Agent executed successfully!", 'success');
+                    log("", 'info');
+                    log("📝 AGENT RESPONSE:", 'info');
+                    log("─".repeat(50), 'info');
+                    log(result, 'success');
+                    log("─".repeat(50), 'info');
+                } else {
+                    log("❌ Agent execution failed or returned empty result", 'error');
+                    log(`Result: ${result}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`Experiment failed: ${error}`, 'error');
+                console.error('Full error:', error);
+            } finally {
+                document.getElementById('runBtn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
