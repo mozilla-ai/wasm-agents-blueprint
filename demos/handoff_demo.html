@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Agend Handoff Demo</title>
+    <title>Agent Handoff Demo</title>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
     <script src="config.js"></script>
     <style>
@@ -25,6 +25,22 @@
         }
         .input-group {
             margin-bottom: 20px;
+        }
+        .agent-config {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .agent-config h3 {
+            margin: 0 0 10px 0;
+            color: #495057;
+            font-size: 16px;
+        }
+        .slim-input {
+            height: 40px !important;
+            font-size: 13px;
         }
         label {
             display: block;
@@ -140,6 +156,30 @@
         <button onclick="initializePyodide()" id="initBtn">⚙️ Initialize Pyodide Environment</button>
 
         <div id="initOutput">Click "Initialize Pyodide Environment" to set up the Python environment...</div>
+
+        <div class="agent-config">
+            <h3>🤖 Agent 1 Configuration</h3>
+            <div class="input-group">
+                <label for="agent1Name">Agent 1 Name:</label>
+                <input type="text" id="agent1Name" class="slim-input" value="Spanish agent" placeholder="Enter agent 1 name">
+            </div>
+            <div class="input-group">
+                <label for="agent1Instructions">Agent 1 Instructions:</label>
+                <input type="text" id="agent1Instructions" class="slim-input" value="You only speak Spanish, and you do it in rhymes." placeholder="Enter agent 1 instructions">
+            </div>
+        </div>
+
+        <div class="agent-config">
+            <h3>🤖 Agent 2 Configuration</h3>
+            <div class="input-group">
+                <label for="agent2Name">Agent 2 Name:</label>
+                <input type="text" id="agent2Name" class="slim-input" value="English agent" placeholder="Enter agent 2 name">
+            </div>
+            <div class="input-group">
+                <label for="agent2Instructions">Agent 2 Instructions:</label>
+                <input type="text" id="agent2Instructions" class="slim-input" value="You only speak English, and you do it in haikus." placeholder="Enter agent 2 instructions">
+            </div>
+        </div>
 
         <div class="input-group">
             <label for="prompt">Custom Prompt:</label>
@@ -295,8 +335,24 @@ set_tracing_disabled(True)
             const prompt = document.getElementById('prompt').value.trim();
             const apiKey = window.APP_CONFIG.OPENAI_API_KEY;
 
+            // Get agent configurations
+            const agent1Name = document.getElementById('agent1Name').value.trim();
+            const agent1Instructions = document.getElementById('agent1Instructions').value.trim();
+            const agent2Name = document.getElementById('agent2Name').value.trim();
+            const agent2Instructions = document.getElementById('agent2Instructions').value.trim();
+
             if (!prompt) {
                 logAgent("Please enter a prompt", 'error');
+                return;
+            }
+
+            if (!agent1Name || !agent1Instructions) {
+                logAgent("Please configure Agent 1 name and instructions", 'error');
+                return;
+            }
+
+            if (!agent2Name || !agent2Instructions) {
+                logAgent("Please configure Agent 2 name and instructions", 'error');
                 return;
             }
 
@@ -305,7 +361,9 @@ set_tracing_disabled(True)
             showRunning("Running Python code");
 
             try {
-                logAgent("🤖 Setting up agent and running...");
+                logAgent("🤖 Setting up agents and running...");
+                logAgent(`Agent 1: "${agent1Name}" - ${agent1Instructions}`);
+                logAgent(`Agent 2: "${agent2Name}" - ${agent2Instructions}`);
                 logAgent(`Prompt: "${prompt}"`);
 
                 // Run the agent and print everything in Python
@@ -320,27 +378,33 @@ os.environ['OPENAI_API_KEY'] = "${apiKey}"
 async def test_agent():
     print("=== STARTING AGENT TEST ===")
     try:
-        # Create agent
+        # Create agents
         print("Creating agents...")
-        spanish_agent = Agent(
-            name="Spanish agent",
-            instructions="You only speak Spanish, and you do it in rhymes.",
-        )
-
-        english_agent = Agent(
-            name="English agent",
-            instructions="You only speak English, and you do it in haikus.",
-        )
-
-        triage_agent = Agent(
-            name="Triage agent",
-            instructions="Handoff to the appropriate agent based on the language of the request.",
-            handoffs=[spanish_agent, english_agent],
+        agent_1 = Agent(
+            name="${agent1Name.replace(/"/g, '\\"')}",
+            instructions="${agent1Instructions.replace(/"/g, '\\"')}",
             model_settings=ModelSettings(
                 extra_args={"timeout": 30}
             )
         )
-        print(f"Agent created: {triage_agent}")
+
+        agent_2 = Agent(
+            name="${agent2Name.replace(/"/g, '\\"')}",
+            instructions="${agent2Instructions.replace(/"/g, '\\"')}",
+            model_settings=ModelSettings(
+                extra_args={"timeout": 30}
+            )
+        )
+
+        triage_agent = Agent(
+            name="Triage agent",
+            instructions="Handoff to the appropriate agent based on the main characteristics of the request.",
+            handoffs=[agent_1, agent_2],
+            model_settings=ModelSettings(
+                extra_args={"timeout": 30}
+            )
+        )
+        print(f"Triage agent created with handoffs: {triage_agent}")
 
         # Run the agent
         print("Running agent...")
