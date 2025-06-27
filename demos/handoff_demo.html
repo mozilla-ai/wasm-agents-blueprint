@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>OpenAI Agents in Pyodide Test</title>
+    <title>Agend Handoff Demo</title>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+    <script src="config.js"></script>
     <style>
         body { 
             font-family: Arial, sans-serif; 
@@ -59,18 +60,22 @@
             background: #ccc; 
             cursor: not-allowed; 
         }
-        #output {
+        #initOutput, #agentOutput {
             background: #f8f9fa;
             border: 2px solid #e9ecef;
             border-radius: 5px;
             padding: 15px;
             margin-top: 20px;
-            min-height: 200px;
+            min-height: 150px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
             white-space: pre-wrap;
-            max-height: 400px;
+            max-height: 300px;
             overflow-y: auto;
+        }
+
+        #initOutput {
+            margin-bottom: 20px;
         }
         .status {
             padding: 10px;
@@ -92,44 +97,119 @@
             margin: 2px;
         }
         .example-prompts button:hover { background: #5a6268; }
+
+        .config-info {
+            background: #e7f3ff;
+            border: 1px solid #b8daff;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .running-indicator {
+            display: none;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            font-weight: bold;
+            color: #856404;
+            text-align: center;
+            font-size: 16px;
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🤖 OpenAI Agents in Pyodide Test</h1>
-        
-        <div class="input-group">
-            <label for="apiKey">OpenAI API Key:</label>
-            <input type="password" id="apiKey" placeholder="sk-..." />
-            <small style="color: #666;">Your API key is only used locally in your browser</small>
+        <h1>🤖 Agent Handoff Demo</h1>
+
+        <div class="config-info">
+            <strong>📋 Configuration:</strong> API key loaded from config.js
+            <span id="configStatus"></span>
         </div>
-        
+
+        <button onclick="initializePyodide()" id="initBtn">⚙️ Initialize Pyodide Environment</button>
+
+        <div id="initOutput">Click "Initialize Pyodide Environment" to set up the Python environment...</div>
+
         <div class="input-group">
             <label for="prompt">Custom Prompt:</label>
             <textarea id="prompt" placeholder="Enter your prompt here...">Tell me about recursion in programming.</textarea>
-            
+
             <div class="example-prompts">
                 <small>Quick examples:</small>
-                <button onclick="setPrompt('Tell me about recursion in programming.')">Recursion</button>
-                <button onclick="setPrompt('Write a poem about artificial intelligence.')">AI Poem</button>
-                <button onclick="setPrompt('Explain quantum computing in simple terms.')">Quantum Computing</button>
-                <button onclick="setPrompt('What is the meaning of life?')">Philosophy</button>
+                <button onclick="setPrompt('¿Cuál es la respuesta a la pregunta fundamental sobre la vida, el universo y todo?')">Spanish 1</button>
+                <button onclick="setPrompt('Escribe un poema corto sobre la inteligencia artificial.')">Spanish 2</button>
+                <button onclick="setPrompt('What is The answer to the Ultimate Question of Life, the Universe, and Everything?')">English 1</button>
+                <button onclick="setPrompt('How much wood would a woodchuck chuck if a woodchuck could chuck wood?')">English 2</button>
             </div>
         </div>
-        
-        <button onclick="runExperiment()" id="runBtn">🚀 Run OpenAI Agents Test</button>
-        <button onclick="clearOutput()" id="clearBtn" disabled>🗑️ Clear Output</button>
-        
-        <div id="output">Click "Run OpenAI Agents Test" to start the experiment...</div>
+
+        <button onclick="runAgent()" id="runBtn" disabled>🚀 Run Agent</button>
+        <button onclick="clearAgentOutput()" id="clearAgentBtn" disabled>🗑️ Clear Agent Output</button>
+
+        <div class="running-indicator" id="runningIndicator">🐍 Running Python code...</div>
+
+        <div id="agentOutput">Initialize the Pyodide environment first, then click "Run Agent" to test the agent</div>
     </div>
 
     <script>
         let pyodide;
-        
-        function log(message, type = 'info') {
-            const output = document.getElementById('output');
+        let isPyodideReady = false;
+
+        // Check config on page load
+        window.addEventListener('load', function() {
+            checkConfig();
+        });
+
+        function showRunning(message = "Python running") {
+            const indicator = document.getElementById('runningIndicator');
+            indicator.style.display = 'block';
+            console.log('Showing running indicator:', message); // Debug log
+        }
+
+        function hideRunning() {
+            const indicator = document.getElementById('runningIndicator');
+            indicator.style.display = 'none';
+            console.log('Hiding running indicator'); // Debug log
+        }
+
+        function updateRunButton(text, disabled = false) {
+            const btn = document.getElementById('runBtn');
+            btn.textContent = text;
+            btn.disabled = disabled;
+        }
+
+        function checkConfig() {
+            const configStatus = document.getElementById('configStatus');
+
+            if (typeof window.APP_CONFIG === 'undefined') {
+                configStatus.innerHTML = ' - <span style="color: #dc3545;">❌ Config not loaded</span>';
+                return false;
+            }
+
+            if (!window.APP_CONFIG.OPENAI_API_KEY || window.APP_CONFIG.OPENAI_API_KEY === 'your-openai-api-key-here') {
+                configStatus.innerHTML = ' - <span style="color: #ffc107;">⚠️ Please set your API key in config.js</span>';
+                return false;
+            }
+
+            configStatus.innerHTML = ' - <span style="color: #28a745;">✅ API key configured</span>';
+            return true;
+        }
+
+        function logToElement(message, type = 'info', element_id) {
+            const output = document.getElementById(element_id);
             const timestamp = new Date().toLocaleTimeString();
-            
+
             let prefix = '';
             switch(type) {
                 case 'success': prefix = '✅'; break;
@@ -137,73 +217,102 @@
                 case 'warning': prefix = '⚠️'; break;
                 case 'info': prefix = 'ℹ️'; break;
             }
-            
-            output.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+
+            output.textContent += `\n[${timestamp}] ${prefix} ${message}`;
             output.scrollTop = output.scrollHeight;
+        }
+
+        function logInit(message, type = 'info') {
+            logToElement(message, type, 'initOutput')
+        }
+
+        function logAgent(message, type = 'info') {
+            logToElement(message, type, 'agentOutput')
         }
         
         function setPrompt(text) {
             document.getElementById('prompt').value = text;
         }
-        
-        function clearOutput() {
-            document.getElementById('output').textContent = '';
+
+        function clearAgentOutput() {
+            document.getElementById('agentOutput').textContent = '';
         }
-        
-        async function runExperiment() {
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const prompt = document.getElementById('prompt').value.trim();
-            
-            if (!apiKey) {
-                log("Please enter your OpenAI API key", 'error');
+
+        async function initializePyodide() {
+            // Check config first
+            if (!checkConfig()) {
+                logInit("Please configure your API key in config.js", 'error');
                 return;
             }
-            
-            if (!apiKey.startsWith('sk-')) {
-                log("API key should start with 'sk-'", 'error');
-                return;
-            }
-            
-            if (!prompt) {
-                log("Please enter a prompt", 'error');
-                return;
-            }
-            
-            // Disable button during execution
-            document.getElementById('runBtn').disabled = true;
-            document.getElementById('clearBtn').disabled = false;
-            
+
+            // Disable init button during setup
+            document.getElementById('initBtn').disabled = true;
+
             try {
-                log("🔄 Loading Pyodide...");
+                logInit("🔄 Loading Pyodide...");
                 pyodide = await loadPyodide();
-                log("Pyodide loaded successfully", 'success');
-                
-                log("📦 Loading micropip...");
+                logInit("Pyodide loaded successfully", 'success');
+
+                logInit("📦 Loading micropip...");
                 await pyodide.loadPackage("micropip");
-                log("micropip loaded", 'success');
-                
-                log("📦 Installing openai-agents (this may take a moment)...");
+                logInit("micropip loaded", 'success');
+
+                logInit("📦 Installing openai-agents (this may take a moment)...");
                 await pyodide.runPythonAsync(`
 import micropip
 await micropip.install("openai-agents")
                 `);
-                log("openai-agents installed successfully", 'success');
-                
-                log("🚫 Disabling tracing to avoid threading issues...");
+                logInit("openai-agents installed successfully", 'success');
+
+                logInit("🚫 Disabling tracing to avoid threading issues...");
                 await pyodide.runPythonAsync(`
 from agents import set_tracing_disabled
 set_tracing_disabled(True)
                 `);
-                log("Tracing disabled", 'success');
-                
-                log("🤖 Setting up agent and running...");
-                log(`Prompt: "${prompt}"`);
-                
-                // First, let's just run the agent and print everything in Python
-                const result = await  pyodide.runPythonAsync(`
+                logInit("Tracing disabled", 'success');
+
+                logInit("✅ Pyodide environment ready!", 'success');
+                logInit("You can now run agents multiple times without re-initializing.", 'info');
+
+                isPyodideReady = true;
+                document.getElementById('runBtn').disabled = false;
+                document.getElementById('clearAgentBtn').disabled = false;
+                document.getElementById('initBtn').textContent = "✅ Environment Ready";
+
+            } catch (error) {
+                logInit(`Initialization failed: ${error}`, 'error');
+                console.error('Full error:', error);
+                document.getElementById('initBtn').disabled = false;
+            }
+        }
+
+        async function runAgent() {
+            if (!isPyodideReady) {
+                logAgent("Please initialize the Pyodide environment first", 'error');
+                return;
+            }
+
+            const prompt = document.getElementById('prompt').value.trim();
+            const apiKey = window.APP_CONFIG.OPENAI_API_KEY;
+
+            if (!prompt) {
+                logAgent("Please enter a prompt", 'error');
+                return;
+            }
+
+            // Disable button during execution
+            document.getElementById('runBtn').disabled = true;
+            showRunning("Running Python code");
+
+            try {
+                logAgent("🤖 Setting up agent and running...");
+                logAgent(`Prompt: "${prompt}"`);
+
+                // Run the agent and print everything in Python
+                const result = await pyodide.runPythonAsync(`
 import asyncio
 import os
-from agents import Agent, Runner
+from agents import Agent, Runner, ModelSettings
 
 # Set API key in environment
 os.environ['OPENAI_API_KEY'] = "${apiKey}"
@@ -227,6 +336,9 @@ async def test_agent():
             name="Triage agent",
             instructions="Handoff to the appropriate agent based on the language of the request.",
             handoffs=[spanish_agent, english_agent],
+            model_settings=ModelSettings(
+                extra_args={"timeout": 30}
+            )
         )
         print(f"Agent created: {triage_agent}")
 
@@ -236,7 +348,7 @@ async def test_agent():
         print(f"Agent run completed!")
         print(f"Result type: {type(result)}")
         print(f"Result: {result}")
-        
+
         # Try to access final_output
         if hasattr(result, 'final_output'):
             print(f"Final output: {result.final_output}")
@@ -246,8 +358,9 @@ async def test_agent():
             print("No final_output attribute found")
             print(f"Available attributes: {dir(result)}")
             return ""
+
         print("=== AGENT TEST COMPLETED ===")
-        
+
     except Exception as e:
         print(f"=== AGENT TEST FAILED ===")
         print(f"Error: {e}")
@@ -259,25 +372,27 @@ async def test_agent():
 final_result = await test_agent()
 final_result
                 `);
-                
+
                 // Display the result
                 if (typeof result === 'string' && result.length > 0 && !result.startsWith('Error:')) {
-                    log("🎉 Agent executed successfully!", 'success');
-                    log("", 'info');
-                    log("📝 AGENT RESPONSE:", 'info');
-                    log("─".repeat(50), 'info');
-                    log(result, 'success');
-                    log("─".repeat(50), 'info');
+                    const formattedResult = result.replace(/\\n/g, '\n');
+                    logAgent("🎉 Agent code ran successfully! Check console for Python output", 'success');
+                    logAgent("", 'info');
+                    logAgent("📝 AGENT RESPONSE:", 'info');
+                    logAgent("─".repeat(50), 'info');
+                    logAgent("\n"+formattedResult, 'info');
+                    logAgent("─".repeat(50), 'info');
                 } else {
-                    log("❌ Agent execution failed or returned empty result", 'error');
-                    log(`Result: ${result}`, 'error');
+                    logAgent("❌ Agent execution failed or returned empty result", 'error');
+                    logAgent(`Result: ${result}`, 'error');
                 }
-                
+
             } catch (error) {
-                log(`Experiment failed: ${error}`, 'error');
+                logAgent(`Agent execution failed: ${error}`, 'error');
                 console.error('Full error:', error);
             } finally {
                 document.getElementById('runBtn').disabled = false;
+                hideRunning();
             }
         }
     </script>
