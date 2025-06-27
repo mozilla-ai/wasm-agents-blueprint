@@ -1,0 +1,25 @@
+[project]
+name = "wasm-agents-blueprint"
+readme = "README.md"
+license = "Apache-2.0"
+dynamic = ["version"]
+description = "Running AI agents in a browser with Pyodide"
+dependencies = []
+
+[project.optional-dependencies]
+docs = [
+  "mkdocs",
+  "mkdocs-material",
+  "mkdocstrings-python",
+]
+
+dev = [
+  "ruff",
+]
+
+[project.urls]
+Documentation = "https://mozilla-ai.github.io/wasm-agents-blueprint/"
+Issues = "https://github.com/mozilla-ai/wasm-agents-blueprint/issues"
+Source = "https://github.com/mozilla-ai/wasm-agents-blueprint"
+
+[tool.setuptools_scm]
