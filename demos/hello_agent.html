@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>OpenAI Agents in Pyodide Test</title>
+    <title>Hello Agent!</title>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
     <script src="config.js"></script>
     <style>
@@ -106,11 +106,31 @@
             margin-bottom: 20px;
             font-size: 14px;
         }
+
+        .running-indicator {
+            display: none;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            font-weight: bold;
+            color: #856404;
+            text-align: center;
+            font-size: 16px;
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🤖 OpenAI Agents in Pyodide Test</h1>
+        <h1>🤖 Hello Agent!</h1>
         
         <div class="config-info">
             <strong>📋 Configuration:</strong> API key loaded from config.js
@@ -127,7 +147,7 @@
             
             <div class="example-prompts">
                 <small>Quick examples:</small>
-                <button onclick="setPrompt('Tell me about recursion in programming.')">Recursion</button>
+                <button onclick="setPrompt('Tell me about recursion in programming in just a few sentences.')">Recursion</button>
                 <button onclick="setPrompt('Write a short poem about artificial intelligence.')">AI Poem</button>
                 <button onclick="setPrompt('Explain quantum computing in simple terms and just a few sentences.')">Quantum Computing</button>
                 <button onclick="setPrompt('What is the meaning of life?')">Philosophy</button>
@@ -141,7 +161,7 @@
             <div class="example-prompts">
                 <small>Instruction examples:</small>
                 <button onclick="setInstructions('You only respond in haikus.')">Haiku Bot</button>
-                <button onclick="setInstructions('You are a helpful programming assistant. Keep your answers short, but provide code examples when possible.')">Code Helper</button>
+                <button onclick="setInstructions('You are a helpful programming assistant. Always provide code examples.')">Code Helper</button>
                 <button onclick="setInstructions('You speak like a pirate. Arrr!')">Pirate</button>
                 <button onclick="setInstructions('You are a wise philosopher who speaks in metaphors.')">Philosopher</button>
             </div>
@@ -150,7 +170,9 @@
         <button onclick="runAgent()" id="runBtn" disabled>🚀 Run Agent</button>
         <button onclick="clearAgentOutput()" id="clearAgentBtn" disabled>🗑️ Clear Agent Output</button>
         
-        <div id="agentOutput">Initialize the Pyodide environment first, then click "Run Agent" to test the agent...</div>
+        <div class="running-indicator" id="runningIndicator">🐍 Running Python code...</div>
+
+        <div id="agentOutput">Initialize the Pyodide environment first, then click "Run Agent" to test the agent</div>
     </div>
 
     <script>
@@ -162,6 +184,24 @@
             checkConfig();
         });
         
+        function showRunning(message = "Python running") {
+            const indicator = document.getElementById('runningIndicator');
+            indicator.style.display = 'block';
+            console.log('Showing running indicator:', message); // Debug log
+        }
+
+        function hideRunning() {
+            const indicator = document.getElementById('runningIndicator');
+            indicator.style.display = 'none';
+            console.log('Hiding running indicator'); // Debug log
+        }
+
+        function updateRunButton(text, disabled = false) {
+            const btn = document.getElementById('runBtn');
+            btn.textContent = text;
+            btn.disabled = disabled;
+        }
+
         function checkConfig() {
             const configStatus = document.getElementById('configStatus');
             
@@ -288,6 +328,7 @@ set_tracing_disabled(True)
             
             // Disable button during execution
             document.getElementById('runBtn').disabled = true;
+            showRunning("Running Python code");
             
             try {
                 logAgent("🤖 Setting up agent and running...");
@@ -350,7 +391,7 @@ final_result
                 
                 // Display the result
                 if (typeof result === 'string' && result.length > 0 && !result.startsWith('Error:')) {
-                    logAgent("🎉 Agent executed successfully! Check console for Python output", 'success');
+                    logAgent("🎉 Agent code ran successfully! Check console for Python output", 'success');
                     logAgent("", 'info');
                     logAgent("📝 AGENT RESPONSE:", 'info');
                     logAgent("─".repeat(50), 'info');
@@ -366,6 +407,7 @@ final_result
                 console.error('Full error:', error);
             } finally {
                 document.getElementById('runBtn').disabled = false;
+                hideRunning();
             }
         }
     </script>
