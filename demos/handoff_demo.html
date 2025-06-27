@@ -183,7 +183,7 @@
 
         <div class="input-group">
             <label for="prompt">Custom Prompt:</label>
-            <textarea id="prompt" placeholder="Enter your prompt here...">Tell me about recursion in programming.</textarea>
+            <textarea id="prompt" placeholder="Enter your prompt here...">What is The answer to the Ultimate Question of Life, the Universe, and Everything?</textarea>
 
             <div class="example-prompts">
                 <small>Quick examples:</small>
@@ -299,6 +299,8 @@
 
                 logInit("📦 Installing openai-agents (this may take a moment)...");
                 await pyodide.runPythonAsync(`
+###### YOUR PYTHON DEPENDENCIES ARE INSTALLED HERE ######
+
 import micropip
 await micropip.install("openai-agents")
                 `);
@@ -306,6 +308,11 @@ await micropip.install("openai-agents")
 
                 logInit("🚫 Disabling tracing to avoid threading issues...");
                 await pyodide.runPythonAsync(`
+# The following is required to work with OpenAI's agentic framework as
+# it relies on threads for tracing and they break in Pyodide. Other
+# frameworks (e.g. smolagents) that use asyncio for tracing work properly
+# (well... better) here.
+
 from agents import set_tracing_disabled
 set_tracing_disabled(True)
                 `);
@@ -368,6 +375,8 @@ set_tracing_disabled(True)
 
                 // Run the agent and print everything in Python
                 const result = await pyodide.runPythonAsync(`
+###### YOUR PYTHON AGENT CODE GOES HERE ######
+
 import asyncio
 import os
 from agents import Agent, Runner, ModelSettings
