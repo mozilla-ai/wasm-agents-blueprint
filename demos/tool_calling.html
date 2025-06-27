@@ -370,9 +370,9 @@ async def test_agent():
     print("=== STARTING AGENT TEST ===")
     try:
         # Create agent
-        print("Creating agents...")
+        print("Creating agent...")
         agent = Agent(
-            name="Hello world",
+            name="Tool caller",
             instructions="You are a helpful agent. Use the available tools to answer the questions.",
             tools=[count_character_occurrences, visit_webpage],
             model_settings=ModelSettings(
