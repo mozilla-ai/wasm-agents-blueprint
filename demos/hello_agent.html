@@ -218,9 +218,9 @@
             configStatus.innerHTML = ' - <span style="color: #28a745;">✅ API key configured</span>';
             return true;
         }
-        
-        function logInit(message, type = 'info') {
-            const output = document.getElementById('initOutput');
+
+        function logToElement(message, type = 'info', element_id) {
+            const output = document.getElementById(element_id);
             const timestamp = new Date().toLocaleTimeString();
             
             let prefix = '';
@@ -234,21 +234,13 @@
             output.textContent += `\n[${timestamp}] ${prefix} ${message}`;
             output.scrollTop = output.scrollHeight;
         }
-        
+
+        function logInit(message, type = 'info') {
+            logToElement(message, type, 'initOutput')
+        }
+
         function logAgent(message, type = 'info') {
-            const output = document.getElementById('agentOutput');
-            const timestamp = new Date().toLocaleTimeString();
-            
-            let prefix = '';
-            switch(type) {
-                case 'success': prefix = '✅'; break;
-                case 'error': prefix = '❌'; break;
-                case 'warning': prefix = '⚠️'; break;
-                case 'info': prefix = 'ℹ️'; break;
-            }
-            
-            output.textContent += `\n[${timestamp}] ${prefix} ${message}`;
-            output.scrollTop = output.scrollHeight;
+            logToElement(message, type, 'agentOutput')
         }
         
         function setPrompt(text) {
