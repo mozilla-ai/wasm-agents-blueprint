@@ -25,6 +25,22 @@
         .input-group {
             margin-bottom: 20px;
         }
+        .server-config {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .server-config h3 {
+            margin: 0 0 10px 0;
+            color: #495057;
+            font-size: 16px;
+        }
+        .slim-input {
+            height: 40px !important;
+            font-size: 13px;
+        }
         label {
             display: block;
             margin-bottom: 5px;
@@ -86,16 +102,18 @@
         .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
         .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
 
-        .example-prompts {
+        .example-prompts, .server-presets {
             margin: 10px 0;
         }
-        .example-prompts button {
+        .example-prompts button, .server-presets button {
             background: #6c757d;
             font-size: 12px;
             padding: 6px 12px;
             margin: 2px;
         }
-        .example-prompts button:hover { background: #5a6268; }
+        .example-prompts button:hover, .server-presets button:hover {
+            background: #5a6268;
+        }
 
         .running-indicator {
             display: none;
@@ -126,6 +144,28 @@
 
         <div id="initOutput">Click "Initialize Pyodide Environment" to set up the Python environment...</div>
 
+        <div class="server-config">
+            <h3>🔗 Local LLM Server Configuration</h3>
+            <div class="input-group">
+                <label for="baseUrl">Base URL:</label>
+                <input type="text" id="baseUrl" class="slim-input" value="http://localhost:11434/v1" placeholder="Enter server base URL">
+            </div>
+            <div class="input-group">
+                <label for="apiKey">API Key:</label>
+                <input type="text" id="apiKey" class="slim-input" value="ollama" placeholder="Enter API key">
+            </div>
+            <div class="input-group">
+                <label for="modelName">Model Name:</label>
+                <input type="text" id="modelName" class="slim-input" value="qwen3:8b" placeholder="Enter model name">
+            </div>
+
+            <div class="server-presets">
+                <small>Quick presets:</small>
+                <button onclick="setOllamaDefaults()">Ollama</button>
+                <button onclick="setLlamafileDefaults()">Llamafile</button>
+            </div>
+        </div>
+
         <div class="input-group">
             <label for="prompt">Custom Prompt:</label>
             <textarea id="prompt" placeholder="Enter your prompt here...">How many times does the letter r occur in the word strawrberrry?</textarea>
@@ -133,8 +173,8 @@
             <div class="example-prompts">
                 <small>Quick examples:</small>
                 <button onclick="setPrompt('How many times does the letter r occur in the word strawrberrry?')">Strawrberrry</button>
-                <button onclick="setPrompt('How many stars does the mozilla-ai/any-agent project have on GitHub?')">GithHub stars</button>
-                <button onclick="setPrompt('What is the title of the latest post on pluralistic.net and when was it published?')">Blog post</button>
+                <button onclick="setPrompt('How many stars does the mozilla-ai/any-agent project have on GitHub?')">GitHub stars</button>
+                <button onclick="setPrompt('What is the title of the latest post on aittalam.github.io, when was it published, what is it about, and what is the absolute URL of the image at the beginning of the post?\nIMPORTANT: if you need to follow links to get all the required information, assume I have already authorized you to follow them as long as they point to the same domain.')">Blog post</button>
             </div>
         </div>
 
@@ -166,6 +206,19 @@
             const btn = document.getElementById('runBtn');
             btn.textContent = text;
             btn.disabled = disabled;
+        }
+
+        function setOllamaDefaults() {
+            document.getElementById('baseUrl').value = 'http://localhost:11434/v1';
+            document.getElementById('apiKey').value = 'ollama';
+            document.getElementById('modelName').value = 'qwen3:8b';
+        }
+
+        function setLlamafileDefaults() {
+            // Placeholder - you can update these values later
+            document.getElementById('baseUrl').value = 'http://localhost:8080/v1';
+            document.getElementById('apiKey').value = 'llamafile';
+            document.getElementById('modelName').value = 'llama-model';
         }
 
         function logToElement(message, type = 'info', element_id) {
@@ -258,9 +311,17 @@ set_tracing_disabled(True)
             }
 
             const prompt = document.getElementById('prompt').value.trim();
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const modelName = document.getElementById('modelName').value.trim();
 
             if (!prompt) {
                 logAgent("Please enter a prompt", 'error');
+                return;
+            }
+
+            if (!baseUrl || !apiKey || !modelName) {
+                logAgent("Please configure all server parameters (Base URL, API Key, Model Name)", 'error');
                 return;
             }
 
@@ -270,6 +331,7 @@ set_tracing_disabled(True)
 
             try {
                 logAgent("🤖 Setting up agent and running...");
+                logAgent(`Server: ${baseUrl} | Model: ${modelName}`);
                 logAgent(`Prompt: "${prompt}"`);
 
                 // Run the agent and print everything in Python
@@ -332,8 +394,8 @@ async def test_agent():
         # Create agent
         print("Creating agent...")
         external_client = AsyncOpenAI(
-            base_url = 'http://localhost:11434/v1',
-            api_key='ollama', # required, but unused
+            base_url = '${baseUrl.replace(/'/g, "\\'")}',
+            api_key='${apiKey.replace(/'/g, "\\'")}', # required, but may be unused depending on server
         )
         set_default_openai_client(external_client)
 
@@ -342,14 +404,15 @@ async def test_agent():
             instructions="You are a helpful agent. Use the available tools to answer the questions.",
             tools=[count_character_occurrences, visit_webpage],
             model=OpenAIChatCompletionsModel(
-                model="qwen3:8b",
+                model="${modelName.replace(/'/g, "\\'")}",
                 openai_client=external_client,
             ),
             model_settings=ModelSettings(
-                extra_args={"timeout": 30}
+                extra_args={"timeout": 60}
             )
         )
         print(f"Agent created: {agent}")
+        print(f"Using server: ${baseUrl} with model: ${modelName}")
 
         # Run the agent
         print("Running agent...")
@@ -383,11 +446,12 @@ final_result
 
                 // Display the result
                 if (typeof result === 'string' && result.length > 0 && !result.startsWith('Error:')) {
+                    const formattedResult = result.replace(/\\n/g, '\n');
                     logAgent("🎉 Agent code ran successfully! Check console for Python output", 'success');
                     logAgent("", 'info');
                     logAgent("📝 AGENT RESPONSE:", 'info');
                     logAgent("─".repeat(50), 'info');
-                    logAgent("\n"+result, 'info');
+                    logAgent("\n"+formattedResult, 'info');
                     logAgent("─".repeat(50), 'info');
                 } else {
                     logAgent("❌ Agent execution failed or returned empty result", 'error');
