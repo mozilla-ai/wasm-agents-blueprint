@@ -24,6 +24,48 @@
             text-align: center;
             margin-bottom: 30px;
         }
+
+        .description {
+            background: #f8f9fa;
+            border-left: 4px solid #007cba;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .description h2 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .description p {
+            margin-bottom: 12px;
+        }
+        .description ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+        .description li {
+            margin-bottom: 8px;
+        }
+        .description a {
+            color: #007cba;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .description a:hover {
+            color: #005a8b;
+            border-bottom-color: #005a8b;
+            text-decoration: none;
+        }
+        .description a:visited {
+            color: #007cba;
+        }
+
         .input-group {
             margin-bottom: 20px;
         }
@@ -142,6 +184,51 @@
     <div class="container">
         <h1>🤖 Tool-Calling Agent With Local LLM</h1>
 
+        <div class="description">
+            <p>
+                This interactive web application allows you to experiment with AI agents in your browser, using
+                <a href="https://openai.github.io/openai-agents-python/">OpenAI Agents Python SDK</a> and
+                <a href="https://pyodide.org/en/stable/">Pyiodide</a>.
+                You can customize agent behavior, test different prompts, and see responses in real-time.
+                Check the <a href="https://github.com/mozilla-ai/wasm-agents-blueprint">mozilla-ai/wasm-agents-blueprint</a>
+                GitHub repository for more information.
+            </p>
+
+            <p><strong>How it works:</strong>
+            this application runs a <strong>local agent</strong> which can make use of the following tools:
+            <ul>
+                <li><strong>count_character_occurrences</strong>
+                    which counts the occurrences of a given character inside a word
+                </li>
+                <li><strong>visit_webpage</strong>
+                    which visits a webpage at the provided url and reads its content as a markdown string
+                </li>
+            </ul>
+            While the former tool is quite trivial and is mainly used to show how to address the 
+            <a href="https://community.openai.com/t/incorrect-count-of-r-characters-in-the-word-strawberry">"r in strawberry"</a>
+            issue, the latter provides the LLM with the capability of accessing up-to-date information on the Web.
+            </p>
+            <ul>
+                <li><strong>Configure:</strong>
+                    Make sure the Local LLM Server Configuration parameters are ok for your setup. In particular,
+                    the default expects you to have <a href="https://ollama.com/">Ollama</a> running on your system
+                    with the <a href="https://ollama.com/library/qwen3:8b">qwen3:8b</a> model installed.
+                </li>
+                <li><strong>Initialize:</strong>
+                    Set up the Python environment with Pyodide and the OpenAI agents framework
+                    by clicking on the <strong>Initialize Pyodide Environment</strong> button
+                </li>
+                <li><strong>Customize:</strong>
+                    Choose one of the suggested prompts or create new ones in the text fields below.
+                    (<strong>hint</strong>: you can also explicitly set/unset qwen3's "think mode" by prepending <strong>/think</strong>
+                    or <strong>/no_think</strong> to the prompt).
+                </li>
+                <li><strong>Run:</strong>
+                    Click on the <strong>Run Agent</strong> button to send your prompt to the agent and see what happens
+                </li>
+            </ul>
+        </div>
+
         <button onclick="initializePyodide()" id="initBtn">⚙️ Initialize Pyodide Environment</button>
 
         <div id="initOutput">Click "Initialize Pyodide Environment" to set up the Python environment...</div>
@@ -164,7 +251,6 @@
             <div class="server-presets">
                 <small>Quick presets:</small>
                 <button onclick="setOllamaDefaults()">Ollama</button>
-                <button onclick="setLlamafileDefaults()">Llamafile</button>
             </div>
         </div>
 
@@ -214,13 +300,6 @@
             document.getElementById('baseUrl').value = 'http://localhost:11434/v1';
             document.getElementById('apiKey').value = 'ollama';
             document.getElementById('modelName').value = 'qwen3:8b';
-        }
-
-        function setLlamafileDefaults() {
-            // Placeholder - you can update these values later
-            document.getElementById('baseUrl').value = 'http://localhost:8080/v1';
-            document.getElementById('apiKey').value = 'llamafile';
-            document.getElementById('modelName').value = 'llama-model';
         }
 
         function logToElement(message, type = 'info', element_id) {
