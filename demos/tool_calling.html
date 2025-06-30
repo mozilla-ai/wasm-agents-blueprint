@@ -7,11 +7,11 @@
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
     <meta content="utf-8" http-equiv="encoding">
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            max-width: 800px; 
-            margin: 0 auto; 
-            padding: 20px; 
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
             background-color: #f5f5f5;
         }
         .container {
@@ -100,9 +100,9 @@
             margin: 5px;
         }
         button:hover { background: #005a8b; }
-        button:disabled { 
-            background: #ccc; 
-            cursor: not-allowed; 
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
         #initOutput, #agentOutput {
             background: #f8f9fa;
@@ -196,7 +196,7 @@
                     which visits a webpage at the provided url and reads its content as a markdown string
                 </li>
             </ul>
-            While the former tool is quite trivial and is mainly used to show how to address the 
+            While the former tool is quite trivial and is mainly used to show how to address the
             <a href="https://community.openai.com/t/incorrect-count-of-r-characters-in-the-word-strawberry">"r in strawberry"</a>
             issue, the latter provides the LLM with the capability of accessing up-to-date information on the Web.
             </p>
@@ -473,7 +473,7 @@ async def test_agent():
         print(f"Agent run completed!")
         print(f"Result type: {type(result)}")
         print(f"Result: {result}")
-        
+
         # Try to access final_output
         if hasattr(result, 'final_output'):
             print(f"Final output: {result.final_output}")
@@ -484,7 +484,7 @@ async def test_agent():
             print(f"Available attributes: {dir(result)}")
             return ""
         print("=== AGENT TEST COMPLETED ===")
-        
+
     except Exception as e:
         print(f"=== AGENT TEST FAILED ===")
         print(f"Error: {e}")

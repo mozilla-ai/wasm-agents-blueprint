@@ -65,11 +65,11 @@ environment.
 
 - **Model Access**:
   - API key for OpenAI models
-  
+
   **OR**
   - Running OpenAI-compatible server like [Ollama](https://ollama.com/) for local / self-hosted models
   - A pre-downloaded model with [tool-calling capabilities](https://ollama.com/blog/tool-support) (default: [`qwen3:8b`](https://ollama.com/library/qwen3:8b))
-  
+
 
 ## Available Demos
 
@@ -82,7 +82,7 @@ Multi-agent system that routes requests to specialized agents based on the promp
 ### 🛠️ Tool-Calling Agent (`tool_calling.html`)
 Advanced agent with built-in tools for practical tasks:
 
-- `count_character_occurrences`: solves the famous "How many Rs in strawberry?" problem :-) 
+- `count_character_occurrences`: solves the famous "How many Rs in strawberry?" problem :-)
 - `visit_webpage`: downloads web content and converts it to markdown
 
 ### 🏠 Local Model Agent (`ollama_local.html`)
@@ -92,7 +92,7 @@ Run agents with local models via Ollama, ensuring higher privacy and offline cap
 ## Troubleshooting
 **Common Issues:**
 
-1. **CORS Errors**: the agent replies it cannot access some Web resources (examples in the pictures below). 
+1. **CORS Errors**: the agent replies it cannot access some Web resources (examples in the pictures below).
 
 ![A screenshot of Firefox showing the agent response "I am unable to access the GitHub page for..." and below that, the Console tab open showing a CORS error.](/images/cors01.png)
 ![A screenshot of Firefox showing the agent response "It seems there was an issue connecting to the website..." and below that, the Network tab showing a CORS error.](/images/cors02.png)
