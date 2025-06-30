@@ -25,6 +25,48 @@
             text-align: center;
             margin-bottom: 30px;
         }
+
+        .description {
+            background: #f8f9fa;
+            border-left: 4px solid #007cba;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .description h2 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .description p {
+            margin-bottom: 12px;
+        }
+        .description ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+        .description li {
+            margin-bottom: 8px;
+        }
+        .description a {
+            color: #007cba;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .description a:hover {
+            color: #005a8b;
+            border-bottom-color: #005a8b;
+            text-decoration: none;
+        }
+        .description a:visited {
+            color: #007cba;
+        }
+
         .input-group {
             margin-bottom: 20px;
         }
@@ -133,6 +175,35 @@
 <body>
     <div class="container">
         <h1>🤖 Hello Agent!</h1>
+
+        <div class="description">
+            <p>
+                This interactive web application allows you to experiment with AI agents in your browser, using
+                <a href="https://openai.github.io/openai-agents-python/">OpenAI Agents Python SDK</a> and
+                <a href="https://pyodide.org/en/stable/">Pyiodide</a>.
+                You can customize agent behavior, test different prompts, and see responses in real-time.
+                Check the <a href="https://github.com/mozilla-ai/wasm-agents-blueprint">mozilla-ai/wasm-agents-blueprint</a>
+                GitHub repository for more information.
+            </p>
+
+            <p><strong>How it works:</strong></p>
+            <ul>
+                <li><strong>Configure:</strong>
+                    <a href="https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key">Get your OpenAI API key</a>,
+                    copy it in the <strong>config.js</strong> file and reload this page
+                </li>
+                <li><strong>Initialize:</strong>
+                    Set up the Python environment with Pyodide and the OpenAI agents framework
+                    by clicking on the <strong>Initialize Pyodide Environment</strong> button
+                </li>
+                <li><strong>Customize:</strong>
+                    Choose one of the suggested prompts and agent instructions or create new ones in the text fields below
+                </li>
+                <li><strong>Run:</strong>
+                    Click on the <strong>Run Agent</strong> button to send your prompt to the agent and see what happens
+                </li>
+            </ul>
+        </div>
 
         <div class="config-info">
             <strong>📋 Configuration:</strong> API key loaded from config.js
