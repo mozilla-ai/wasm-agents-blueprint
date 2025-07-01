@@ -24,38 +24,9 @@
 
 </div>
 
-# WASM Agents Blueprint
+# Wasm Agents Blueprint
 
-This Blueprint demonstrates how to run AI agents directly in the browser using WebAssembly (WASM) through Pyodide and the OpenAI Agents Python SDK. Experience the power of Python-based AI agents without external dependencies – agent code runs directly in your web browser.
-
-## Quick-start
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/mozilla-ai/wasm-agents-blueprint.git
-   cd wasm-agents-blueprint/demos
-   ```
-
-2. **Configure your API key:**
-   - Get your [OpenAI API key](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key)
-   - Copy it into `config.js`:
-     ```javascript
-     window.APP_CONFIG = {
-         OPENAI_API_KEY: 'your-api-key-here'
-     };
-     ```
-
-3. **Open any HTML file directly in your browser:**
-   - `hello_agent.html` - Basic agent example
-   - `handoff_demo.html` - Multi-agent handoff system
-   - `tool_calling.html` - Tool calling agent with web scraping and character counting capabilities
-   - `ollama_local.html` - Tool calling agent with local model support via Ollama
-
-
-## How it Works
-
-This Blueprint leverages [Pyodide](https://pyodide.org/) to run Python code directly in the browser, enabling you to use the full [OpenAI Agents Python SDK](https://openai.github.io/openai-agents-python/) without the need to install any developer
-environment.
+This Blueprint demonstrates how to run AI agents directly in the browser, using [WebAssembly](https://webassembly.org/) (Wasm) through [Pyodide](https://pyodide.org/) and the [OpenAI Agents Python SDK](https://openai.github.io/openai-agents-python/). Experience the power of Python-based AI agents without external dependencies – agent code runs directly in your web browser.
 
 ## Pre-requisites
 
@@ -68,13 +39,48 @@ environment.
 
   **OR**
   - Running OpenAI-compatible server like [Ollama](https://ollama.com/) for local / self-hosted models
-  - A pre-downloaded model with [tool-calling capabilities](https://ollama.com/blog/tool-support) (default: [`qwen3:8b`](https://ollama.com/library/qwen3:8b))
+  - A pre-downloaded model with [tool-calling capabilities](https://ollama.com/blog/tool-support) (tested with: [`qwen3:8b`](https://ollama.com/library/qwen3:8b))
+
+## Quick-start
+
+The agents available in this repository use the OpenAI API to communicate with any compatible LLM server:
+- three of them make use of the [default model](https://openai.github.io/openai-agents-python/ref/agent/#__codelineno-0-135) configured in the library (currently OpenAI's `gpt-4o`);
+- the `ollama_local.html` example relies on an open-weights model ([Qwen3-8b](https://qwenlm.github.io/blog/qwen3/)) served locally via [Ollama](https://ollama.com/).
+
+Here's how you can run these agents in your own browser:
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/mozilla-ai/wasm-agents-blueprint.git
+   cd wasm-agents-blueprint/demos
+   ```
+
+1. **Configure your API key (required for gpt models only):**
+   - Get your [OpenAI API key](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key)
+   - Copy it into `config.js`:
+     ```javascript
+     window.APP_CONFIG = {
+         OPENAI_API_KEY: 'your-api-key-here'
+     };
+     ```
+
+1. **Start Ollama (required for `ollama_local` example only)**
+    - make sure you run ollama with an [appropriate context length](https://github.com/ollama/ollama/blob/main/docs/faq.md) and allowing CORS Origins, e.g.:
+   ```bash
+   OLLAMA_CONTEXT_LENGTH=40000 OLLAMA_ORIGINS="*" ollama serve
+   ```
+
+1. **Open one of the following HTML files directly in your browser:**
+   - `hello_agent.html` - Basic agent example
+   - `handoff_demo.html` - Multi-agent handoff system
+   - `tool_calling.html` - Tool calling agent with web scraping and character counting capabilities
+   - `ollama_local.html` - Tool calling agent with local model support via Ollama
 
 
 ## Available Demos
 
 ### 🤖 Basic Agent (`hello_agent.html`)
-Simple conversational agent with customizable instructions. Perfect for understanding the basics of WASM-based agents.
+Simple conversational agent with customizable instructions. Perfect for understanding the basics of Wasm-based agents.
 
 ### 🔄 Agent Handoff (`handoff_demo.html`)
 Multi-agent system that routes requests to specialized agents based on the prompt's characteristics.
@@ -105,7 +111,7 @@ This happens when you ask the agent to do something with data retrieved via the 
 
 3. **API Key Problems**: Verify your OpenAI API key is correctly set in `config.js`
 
-4. **Issues With Local Model**: For Ollama, start with CORS enabled and larger context window:
+4. **Issues With Local Model**: For Ollama, make sure you enable CORS and set a context length larger than the default one:
    ```bash
    OLLAMA_CONTEXT_LENGTH=40000 OLLAMA_ORIGINS="*" ollama serve
    ```
