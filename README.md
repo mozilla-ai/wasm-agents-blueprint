@@ -80,7 +80,7 @@ Here's how you can run these agents in your own browser:
 ## Available Demos
 
 ### 🤖 Basic Agent (`hello_agent.html`)
-Simple conversational agent with customizable instructions. Perfect for understanding the basics of Wasm-based agents.
+Simple conversational agent with customizable instructions. Useful for understanding the basics of Wasm-based agents.
 
 ### 🔄 Agent Handoff (`handoff_demo.html`)
 Multi-agent system that routes requests to specialized agents based on the prompt's characteristics.
@@ -88,7 +88,7 @@ Multi-agent system that routes requests to specialized agents based on the promp
 ### 🛠️ Tool-Calling Agent (`tool_calling.html`)
 Advanced agent with built-in tools for practical tasks:
 
-- `count_character_occurrences`: solves the famous "How many Rs in strawberry?" problem :-)
+- `count_character_occurrences`: addresses the famous "How many Rs in strawberry?" problem :-)
 - `visit_webpage`: downloads web content and converts it to markdown
 
 ### 🏠 Local Model Agent (`ollama_local.html`)
