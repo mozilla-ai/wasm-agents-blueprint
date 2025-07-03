@@ -15,8 +15,9 @@
 ![Python](https://img.shields.io/badge/Python-3.12%2B-blue)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![](https://dcbadge.limes.pink/api/server/YuMNeuKStr?style=flat)](https://discord.gg/YuMNeuKStr) <br>
-
 [Blueprints Hub](https://developer-hub.mozilla.ai/)
+| [Documentation](https://mozilla-ai.github.io/wasm-agents-blueprint/)
+| [Getting Started](https://mozilla-ai.github.io/wasm-agents-blueprint/getting-started)
 | [Contributing](CONTRIBUTING.md)
 
 </div>
