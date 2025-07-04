@@ -1,4 +1,4 @@
-# Contributing to mozilla.ai Blueprints
+# Contributing to the Wasm Agents Blueprint
 
 Thank you for your interest in contributing to this repository! This project is part of the Blueprints initiative, which empowers developers to integrate AI capabilities into their projects using open-source tools and models.
 
