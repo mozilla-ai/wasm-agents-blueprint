@@ -42,8 +42,8 @@ While you'll still use external (even local!) LLMs for inferencing, you can expe
 ## Quick-start
 
 The agents available in this repository use the OpenAI API to communicate with any compatible LLM server:
-- three of them make use of the [default model](https://openai.github.io/openai-agents-python/ref/agent/#__codelineno-0-135) configured in the library (currently OpenAI's `gpt-4o`);
 - the `ollama_local.html` example relies on an open-weights model ([Qwen3-8b](https://qwenlm.github.io/blog/qwen3/)) served locally via [Ollama](https://ollama.com/).
+- the other examples make use of the [default model](https://openai.github.io/openai-agents-python/ref/agent/#__codelineno-0-135) configured in the library (currently OpenAI's `gpt-4o`);
 
 Here's how you can run these agents in your own browser:
 
