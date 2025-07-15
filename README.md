@@ -33,11 +33,11 @@ While you'll still use external (even local!) LLMs for inferencing, you can expe
   - Modern web browser with WebAssembly support (Chrome 57+, Firefox 52+, Safari 11+, Edge 16+)
 
 - **Model Access**:
-  - API key for OpenAI models
-
-  **OR**
   - A running OpenAI-compatible server like [Ollama](https://ollama.com/) for local / self-hosted models
   - A pre-downloaded model with [tool-calling capabilities](https://ollama.com/blog/tool-support) (tested with: [`qwen3:8b`](https://ollama.com/library/qwen3:8b))
+
+  **OR**
+  - API key for OpenAI models
 
 ## Quick-start
 
