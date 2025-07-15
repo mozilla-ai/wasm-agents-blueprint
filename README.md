@@ -23,7 +23,8 @@
 
 # Wasm Agents Blueprint
 
-This Blueprint demonstrates how to run AI agents directly in the browser, using [WebAssembly](https://webassembly.org/) (Wasm) through [Pyodide](https://pyodide.org/) and the [OpenAI Agents Python SDK](https://openai.github.io/openai-agents-python/). Experience the power of Python-based AI agents without external dependencies – agent code runs directly in your web browser.
+This Blueprint bridges the gap between powerful Python AI frameworks and browser-based applications, by running the [OpenAI Agents Python SDK](https://openai.github.io/openai-agents-python/) in [WebAssembly](https://webassembly.org/) (Wasm) through [Pyodide](https://pyodide.org/).
+While you'll still use external (even local!) LLMs for inferencing, you can experience the power of Python-based AI agents without external dependencies. No server configurations, Docker containers, or complex deployments: just open an HTML file.
 
 ## Pre-requisites
 
@@ -35,7 +36,7 @@ This Blueprint demonstrates how to run AI agents directly in the browser, using 
   - API key for OpenAI models
 
   **OR**
-  - Running OpenAI-compatible server like [Ollama](https://ollama.com/) for local / self-hosted models
+  - A running OpenAI-compatible server like [Ollama](https://ollama.com/) for local / self-hosted models
   - A pre-downloaded model with [tool-calling capabilities](https://ollama.com/blog/tool-support) (tested with: [`qwen3:8b`](https://ollama.com/library/qwen3:8b))
 
 ## Quick-start
