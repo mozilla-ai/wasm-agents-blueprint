@@ -10,16 +10,16 @@ environment.
   - Modern web browser with WebAssembly support (Chrome 57+, Firefox 52+, Safari 11+, Edge 16+)
 
 - **Model Access**:
-  - API key for OpenAI models
+  - A running OpenAI-compatible server like [Ollama](https://ollama.com/) or [LM Studio](https://lmstudio.ai/) for local / self-hosted models
+  - A pre-downloaded model with [tool-calling capabilities](https://ollama.com/blog/tool-support) (tested with: [`qwen3:8b`](https://ollama.com/library/qwen3:8b), [Devstral Small 2507](https://lmstudio.ai/models/mistralai/devstral-small-2507))
 
   **OR**
-  - Running OpenAI-compatible server like [Ollama](https://ollama.com/) for local / self-hosted models
-  - A pre-downloaded model with [tool-calling capabilities](https://ollama.com/blog/tool-support) (tested with: [`qwen3:8b`](https://ollama.com/library/qwen3:8b))
+  - API key for OpenAI models
 
 ## Quick-start
 
 The WebAssembly agents available in this repository use the OpenAI API to communicate with any OpenaAI API-compatible LLM server.
-Three of them make use of the [default model](https://openai.github.io/openai-agents-python/ref/agent/#__codelineno-0-135) configured in the library (currently `gpt-4o`). The `ollama_local.html` example, instead, uses an open-weights model ([Qwen3-8b](https://qwenlm.github.io/blog/qwen3/)) served locally via [Ollama](https://ollama.com/). Here's how you can run these agents in your own browser:
+Three of them make use of the [default model](https://openai.github.io/openai-agents-python/ref/agent/#__codelineno-0-135) configured in the library (currently `gpt-4o`). The `local_model.html` example, instead, uses open-weights models served locally (tested with Ollama and LM Studio, but should work with other Open AI API compatible servers). Here's how you can run these agents in your own browser:
 
 1. **Clone the repository:**
    ```bash
@@ -36,37 +36,38 @@ Three of them make use of the [default model](https://openai.github.io/openai-ag
      };
      ```
 
-1. **Start Ollama (required for `ollama_local` example only)**
-    - make sure you run ollama with an [appropriate context length](https://github.com/ollama/ollama/blob/main/docs/faq.md) and allowing CORS Origins, e.g.:
+1. **Start serving a local model (required for `local_model` example only)**
+    - for Ollama, make sure you run with an [appropriate context length](https://github.com/ollama/ollama/blob/main/docs/faq.md) and allowing CORS Origins, e.g.:
    ```bash
    OLLAMA_CONTEXT_LENGTH=40000 OLLAMA_ORIGINS="*" ollama serve
    ```
+    - for LM Studio, customize context length in the `Edit model default parameters` section and make sure `Enable CORS` is active in the Developer / model serving section.
 
 1. **Open one of the following HTML files directly in your browser:**
    - `hello_agent.html` - Basic agent example
    - `handoff_demo.html` - Multi-agent handoff system
    - `tool_calling.html` - Tool calling agent with web scraping and character counting capabilities
-   - `ollama_local.html` - Tool calling agent with local model support via Ollama
+   - `local_model.html` - Tool calling agent with local model support
 
 
 ---
 
 ## Available Demos
 
-### 🤖 Basic Agent (`hello_agent.html`)
+### Basic Agent (`hello_agent.html`)
 Simple conversational agent with customizable instructions. Perfect for understanding the basics of Wasm-based agents.
 
-### 🔄 Agent Handoff (`handoff_demo.html`)
+### Agent Handoff (`handoff_demo.html`)
 Multi-agent system that routes requests to specialized agents based on the prompt's characteristics.
 
-### 🛠️ Tool-Calling Agent (`tool_calling.html`)
+### Tool-Calling Agent (`tool_calling.html`)
 Advanced agent with built-in tools for practical tasks:
 
 - `count_character_occurrences`: solves the famous "How many Rs in strawberry?" problem :-)
 - `visit_webpage`: downloads web content and converts it to markdown
 
-### 🏠 Local Model Agent (`ollama_local.html`)
-Run agents with local models via Ollama, ensuring higher privacy and offline capability.
+### Local Model Agent (`local_model.html`)
+Run agents with local models via Ollama or LM Studio, ensuring higher privacy and offline capability.
 
 
 ---
@@ -74,8 +75,6 @@ Run agents with local models via Ollama, ensuring higher privacy and offline cap
 ## Next Steps
 
 - **[Customization Guide](customization.md)**: Learn how to modify agents, add tools, and integrate new models
-- **[Step-by-Step Guide](step-by-step-guide.md)**: Deep dive into how the system works under the hood
-- **[API Reference](api.md)**: Technical details for advanced customization
 
 ---
 
