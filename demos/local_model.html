@@ -490,7 +490,7 @@ async def test_agent():
                 openai_client=external_client,
             ),
             model_settings=ModelSettings(
-                extra_args={"timeout": 60}
+                extra_args={"timeout": 90}
             )
         )
         print(f"Agent created: {agent}")
