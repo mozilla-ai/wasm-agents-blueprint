@@ -251,6 +251,7 @@
             <div class="server-presets">
                 <small>Quick presets:</small>
                 <button onclick="setOllamaDefaults()">Ollama</button>
+                <button onclick="setLMStudioDefaults()">LM Studio</button>
             </div>
         </div>
 
@@ -301,6 +302,13 @@
             document.getElementById('apiKey').value = 'ollama';
             document.getElementById('modelName').value = 'qwen3:8b';
         }
+
+        function setLMStudioDefaults() {
+            document.getElementById('baseUrl').value = 'http://localhost:1234/v1';
+            document.getElementById('apiKey').value = 'lmstudio';
+            document.getElementById('modelName').value = 'deepseek/deepseek-r1-0528-qwen3-8b';
+        }
+
 
         function logToElement(message, type = 'info', element_id) {
             const output = document.getElementById(element_id);
@@ -498,7 +506,7 @@ async def test_agent():
 
         # Run the agent
         print("Running agent...")
-        result = await Runner.run(agent, """${prompt.replace(/"/g, '\\"')}""")
+        result = await Runner.run(agent, """${prompt.replace(/"/g, '\\"')}""",  max_turns=30)
         print(f"Agent run completed!")
         print(f"Result type: {type(result)}")
         print(f"Result: {result}")
