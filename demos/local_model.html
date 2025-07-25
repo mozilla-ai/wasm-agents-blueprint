@@ -506,7 +506,7 @@ async def test_agent():
 
         # Run the agent
         print("Running agent...")
-        result = await Runner.run(agent, """${prompt.replace(/"/g, '\\"')}""",  max_turns=30)
+        result = await Runner.run(agent, """${prompt.replace(/"/g, '\\"')}""",  max_turns=20)
         print(f"Agent run completed!")
         print(f"Result type: {type(result)}")
         print(f"Result: {result}")
