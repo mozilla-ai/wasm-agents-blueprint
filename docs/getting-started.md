@@ -11,7 +11,7 @@ environment.
 
 - **Model Access**:
   - A running OpenAI-compatible server like [Ollama](https://ollama.com/) or [LM Studio](https://lmstudio.ai/) for local / self-hosted models
-  - A pre-downloaded model with [tool-calling capabilities](https://ollama.com/blog/tool-support) (tested with: [`qwen3:8b`](https://ollama.com/library/qwen3:8b), [Devstral Small 2507](https://lmstudio.ai/models/mistralai/devstral-small-2507))
+  - A pre-downloaded model with [tool-calling capabilities](https://ollama.com/blog/tool-support) (tested with: [`qwen3:8b`](https://ollama.com/library/qwen3:8b), [`Devstral Small 2507:24b`](https://lmstudio.ai/models/mistralai/devstral-small-2507))
 
   **OR**
   - API key for OpenAI models
