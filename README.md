@@ -131,4 +131,4 @@ Contributions are welcome! To get started, you can check out the [CONTRIBUTING.m
 This Blueprint is built on top of:
 - [Pyodide](https://pyodide.org/) - Python in the browser via WebAssembly
 - [OpenAI Agents Python SDK](https://openai.github.io/openai-agents-python/) - Agentic AI framework
-- [Ollama](https://ollama.com/) - Local model serving (optional)
+- [Ollama](https://ollama.com/) and [LM Studio](https://lmstudio.ai/) - Local model serving (optional)
