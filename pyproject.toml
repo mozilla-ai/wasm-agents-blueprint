@@ -11,6 +11,7 @@ docs = [
   "mkdocs",
   "mkdocs-material",
   "mkdocstrings-python",
+  "setuptools_scm",
 ]
 
 dev = [
