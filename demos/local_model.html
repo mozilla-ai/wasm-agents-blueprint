@@ -229,6 +229,8 @@
                     can also click the <strong>LM Studio</strong> preset button if you are using
                     <a href="https://lmstudio.ai/">LM Studio</a>, and make sure to update your model name accordingly.
                     Optionally, add your TAVILY_API_KEY to config.js to enable web search functionality.
+                    <br/><strong>NOTE</strong>: if you are using LM Studio with a thinking model and are getting tool
+                    calls directly in the model's response, disable thinking in the "Edit model default parameters" section.
                 </li>
                 <li><strong>Initialize:</strong>
                     Set up the Python environment with Pyodide and the OpenAI agents framework
@@ -415,7 +417,9 @@
 ###### YOUR PYTHON DEPENDENCIES ARE INSTALLED HERE ######
 
 import micropip
-await micropip.install("openai-agents==0.2.0")
+await micropip.install("typing-extensions>=4.12.2")
+await micropip.install("openai==1.99.9")
+await micropip.install("openai-agents==0.2.6")
 await micropip.install("sqlite3==1.0.0")
 await micropip.install("requests==2.31.0")
 await micropip.install("markdownify==1.1.0")
