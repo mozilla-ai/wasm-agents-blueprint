@@ -6,15 +6,15 @@ environment.
 ## Pre-requisites
 
 - **System requirements**:
-  - OS: Windows, macOS, or Linux
-  - Modern web browser with WebAssembly support (Chrome 57+, Firefox 52+, Safari 11+, Edge 16+)
+    - OS: Windows, macOS, or Linux
+    - Modern web browser with WebAssembly support (Chrome 57+, Firefox 52+, Safari 11+, Edge 16+)
 
 - **Model Access**:
-  - A running OpenAI-compatible server like [Ollama](https://ollama.com/) or [LM Studio](https://lmstudio.ai/) for local / self-hosted models
-  - A pre-downloaded model with [tool-calling capabilities](https://ollama.com/blog/tool-support) (tested with: [`qwen3:8b`](https://ollama.com/library/qwen3:8b), [`Devstral Small 2507:24b`](https://lmstudio.ai/models/mistralai/devstral-small-2507))
+    - A running OpenAI-compatible server like [Ollama](https://ollama.com/) or [LM Studio](https://lmstudio.ai/) for local / self-hosted models
+    - A pre-downloaded model with [tool-calling capabilities](https://ollama.com/blog/tool-support) (tested with: [`qwen3:8b`](https://ollama.com/library/qwen3:8b), [`Devstral Small 2507:24b`](https://lmstudio.ai/models/mistralai/devstral-small-2507))
 
-  **OR**
-  - API key for OpenAI models
+- ...**OR**:
+    - API key for OpenAI models
 
 ## Quick-start
 
@@ -28,8 +28,8 @@ Three of them make use of the [default model](https://openai.github.io/openai-ag
    ```
 
 1. **Configure your API key (required for gpt models only):**
-   - Get your [OpenAI API key](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key)
-   - Copy it into `config.js`:
+    - Get your [OpenAI API key](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key)
+    - Copy it into `config.js`:
      ```javascript
      window.APP_CONFIG = {
          OPENAI_API_KEY: 'your-api-key-here'
@@ -44,10 +44,10 @@ Three of them make use of the [default model](https://openai.github.io/openai-ag
     - for LM Studio, customize context length in the `Edit model default parameters` section and make sure `Enable CORS` is active in the Developer / model serving section.
 
 1. **Open one of the following HTML files directly in your browser:**
-   - `hello_agent.html` - Basic agent example
-   - `handoff_demo.html` - Multi-agent handoff system
-   - `tool_calling.html` - Tool calling agent with web scraping and character counting capabilities
-   - `local_model.html` - Tool calling agent with local model support
+    - `hello_agent.html` - Basic agent example
+    - `handoff_demo.html` - Multi-agent handoff system
+    - `tool_calling.html` - Tool calling agent with web scraping and character counting capabilities
+    - `local_model.html` - Tool calling agent with local model support
 
 
 ---
