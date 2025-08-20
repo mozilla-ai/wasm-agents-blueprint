@@ -382,7 +382,10 @@
 ###### YOUR PYTHON DEPENDENCIES ARE INSTALLED HERE ######
 
 import micropip
-await micropip.install("openai-agents==0.2.0")
+await micropip.install("typing-extensions>=4.12.2")
+await micropip.install("openai==1.99.9")
+await micropip.install("mcp==1.12.4")
+await micropip.install("openai-agents==0.2.6")
 await micropip.install("sqlite3==1.0.0")
                 `);
                 logInit("openai-agents installed successfully", 'success');

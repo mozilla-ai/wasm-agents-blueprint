@@ -260,15 +260,15 @@
             <h3>🔗 Local LLM Server Configuration</h3>
             <div class="input-group">
                 <label for="baseUrl">Base URL:</label>
-                <input type="text" id="baseUrl" class="slim-input" value="http://localhost:11434/v1" placeholder="Enter server base URL">
+                <input type="text" id="baseUrl" class="slim-input" value="http://localhost:1234/v1" placeholder="Enter server base URL">
             </div>
             <div class="input-group">
                 <label for="apiKey">API Key:</label>
-                <input type="text" id="apiKey" class="slim-input" value="ollama" placeholder="Enter API key">
+                <input type="text" id="apiKey" class="slim-input" value="lmstudio" placeholder="Enter API key">
             </div>
             <div class="input-group">
                 <label for="modelName">Model Name:</label>
-                <input type="text" id="modelName" class="slim-input" value="qwen3:8b" placeholder="Enter model name">
+                <input type="text" id="modelName" class="slim-input" value="qwen/qwen3-8b" placeholder="Enter model name">
             </div>
 
             <div class="server-presets">
@@ -419,9 +419,9 @@
 import micropip
 await micropip.install("typing-extensions>=4.12.2")
 await micropip.install("openai==1.99.9")
+await micropip.install("mcp==1.12.4")
 await micropip.install("openai-agents==0.2.6")
 await micropip.install("sqlite3==1.0.0")
-await micropip.install("requests==2.31.0")
 await micropip.install("markdownify==1.1.0")
 await micropip.install("tavily-python==0.7.10")
                 `);
@@ -527,25 +527,29 @@ def count_character_occurrences(word: str, char: str):
     return word.count(char)
 
 @function_tool
-def visit_webpage(url: str, max_length: int = -1) -> str:
+def visit_webpage(url: str, timeout: int = 30, max_length: int = None) -> str:
     """Visits a webpage at the given url and reads its content as a markdown string. Use this to browse webpages.
 
     Args:
         url: The url of the webpage to visit.
-        max_length: The maximum number of characters of text that can be returned (default is -1 i.e. full webpage is returned)
+        timeout: The timeout in seconds for the request.
+        max_length: The maximum number of characters of text that can be returned.
+                    If not provided, the full webpage is returned.
 
     """
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=timeout)
         response.raise_for_status()
 
-        markdown_content = markdownify(response.text).strip()  # type: ignore[no-untyped-call]
+        markdown_content = markdownify(response.text).strip()
 
         markdown_content = re.sub(r"\\n{2,}", "\\n", markdown_content)
 
-        if max_length == -1:
-            return str(markdown_content)
-        return _truncate_content(markdown_content, max_length)
+        if max_length:
+            return _truncate_content(markdown_content, max_length)
+
+        return str(markdown_content)
+
     except RequestException as e:
         return f"Error fetching the webpage: {e!s}"
     except Exception as e:
