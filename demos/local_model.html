@@ -3,6 +3,7 @@
 <head>
     <title>Tool-Calling Agent With Local LLM</title>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+    <script src="config.js"></script>
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
     <meta content="utf-8" http-equiv="encoding">
     <style>
@@ -159,6 +160,15 @@
             background: #5a6268;
         }
 
+        .config-info {
+            background: #e7f3ff;
+            border: 1px solid #b8daff;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
         .running-indicator {
             display: none;
             background: #fff3cd;
@@ -203,10 +213,13 @@
                 <li><strong>visit_webpage</strong>
                     which visits a webpage at the provided url and reads its content as a markdown string
                 </li>
+                <li><strong>search_tavily</strong>
+                    which performs web searches using Tavily API (requires TAVILY_API_KEY in config.js)
+                </li>
             </ul>
             While the former tool is quite trivial and is mainly used to show how to address the
             <a href="https://community.openai.com/t/incorrect-count-of-r-characters-in-the-word-strawberry">"r in strawberry"</a>
-            issue, the latter provides the LLM with the capability of accessing up-to-date information on the Web.
+            issue, the latter two provide the LLM with the capability of accessing up-to-date information on the Web.
             </p>
             <ul>
                 <li><strong>Configure:</strong>
@@ -215,6 +228,9 @@
                     with the <a href="https://ollama.com/library/qwen3:8b">qwen3:8b</a> model installed. You
                     can also click the <strong>LM Studio</strong> preset button if you are using
                     <a href="https://lmstudio.ai/">LM Studio</a>, and make sure to update your model name accordingly.
+                    Optionally, add your TAVILY_API_KEY to config.js to enable web search functionality.
+                    <br/><strong>NOTE</strong>: if you are using LM Studio with a thinking model and are getting tool
+                    calls directly in the model's response, disable thinking in the "Edit model default parameters" section.
                 </li>
                 <li><strong>Initialize:</strong>
                     Set up the Python environment with Pyodide and the OpenAI agents framework
@@ -229,6 +245,11 @@
                     Click on the <strong>Run Agent</strong> button to send your prompt to the agent and see what happens
                 </li>
             </ul>
+        </div>
+
+        <div class="config-info">
+            <strong>📋 Configuration:</strong> Config loaded from config.js
+            <span id="configStatus"></span>
         </div>
 
         <button onclick="initializePyodide()" id="initBtn">⚙️ Initialize Pyodide Environment</button>
@@ -265,7 +286,8 @@
                 <small>Quick examples:</small>
                 <button onclick="setPrompt('How many times does the letter r occur in the word strawrberrry?')">Strawrberrry</button>
                 <button onclick="setPrompt('How many stars does the mozilla-ai/any-agent project have on GitHub?')">GitHub stars</button>
-                <button onclick="setPrompt('What is the title of the latest post on aittalam.github.io, when was it published, what is it about, and what is the absolute URL of the image at the beginning of the post?\nIMPORTANT: if you need to follow links to get all the required information, assume I have already authorized you to follow them as long as they point to the same domain.')">Blog post</button>
+                <button onclick="setPrompt('What is the title of the latest post on https:\/\/aittalam.github.io, when was it published, what is it about, and what is the absolute URL of the image at the beginning of the post?\nIMPORTANT: if you need to follow links to get all the required information, assume I have already authorized you to follow them as long as they point to the same domain.')">Blog post</button>
+                <button onclick="setPrompt('What are 5 tv shows that are trending in 2025? Please provide the name of the show, the exact release date, the genre, and a brief description of the show.\nIMPORTANT: if you need to follow links to get all the required information, assume I have already authorized you to follow them. Always download full webpage contents.')">Trending TV Shows</button>
             </div>
         </div>
 
@@ -280,6 +302,11 @@
     <script>
         let pyodide;
         let isPyodideReady = false;
+
+        // Check config on page load
+        window.addEventListener('load', function() {
+            checkConfig();
+        });
 
         function showRunning(message = "Python running") {
             const indicator = document.getElementById('runningIndicator');
@@ -299,6 +326,29 @@
             btn.disabled = disabled;
         }
 
+        function checkConfig() {
+            const configStatus = document.getElementById('configStatus');
+            let statusParts = [];
+
+            if (typeof window.APP_CONFIG === 'undefined') {
+                configStatus.innerHTML = ' - <span style="color: #dc3545;">❌ Config not loaded</span>';
+                return { configLoaded: false, tavilyAvailable: false };
+            }
+
+            // Check if Tavily API key is available
+            const tavilyAvailable = window.APP_CONFIG.TAVILY_API_KEY &&
+                                   window.APP_CONFIG.TAVILY_API_KEY !== 'your-tavily-api-key-here';
+
+            if (tavilyAvailable) {
+                statusParts.push('<span style="color: #28a745;">✅ Tavily API key configured</span>');
+            } else {
+                statusParts.push('<span style="color: #ffc107;">⚠️ Tavily API key not set (search_tavily tool will be disabled)</span>');
+            }
+
+            configStatus.innerHTML = ' - ' + statusParts.join(', ');
+            return { configLoaded: true, tavilyAvailable: tavilyAvailable };
+        }
+
         function setOllamaDefaults() {
             document.getElementById('baseUrl').value = 'http://localhost:11434/v1';
             document.getElementById('apiKey').value = 'ollama';
@@ -308,9 +358,8 @@
         function setLMStudioDefaults() {
             document.getElementById('baseUrl').value = 'http://localhost:1234/v1';
             document.getElementById('apiKey').value = 'lmstudio';
-            document.getElementById('modelName').value = 'deepseek/deepseek-r1-0528-qwen3-8b';
+            document.getElementById('modelName').value = 'mistralai/devstral-small-2507';
         }
-
 
         function logToElement(message, type = 'info', element_id) {
             const output = document.getElementById(element_id);
@@ -345,6 +394,12 @@
         }
 
         async function initializePyodide() {
+            // Check config first
+            const configCheck = checkConfig();
+            if (!configCheck.configLoaded) {
+                logInit("Config not loaded, but proceeding anyway", 'warning');
+            }
+
             // Disable init button during setup
             document.getElementById('initBtn').disabled = true;
 
@@ -362,10 +417,13 @@
 ###### YOUR PYTHON DEPENDENCIES ARE INSTALLED HERE ######
 
 import micropip
-await micropip.install("openai-agents==0.2.0")
+await micropip.install("typing-extensions>=4.12.2")
+await micropip.install("openai==1.99.9")
+await micropip.install("openai-agents==0.2.6")
 await micropip.install("sqlite3==1.0.0")
 await micropip.install("requests==2.31.0")
 await micropip.install("markdownify==1.1.0")
+await micropip.install("tavily-python==0.7.10")
                 `);
                 logInit("openai-agents installed successfully", 'success');
 
@@ -417,6 +475,10 @@ set_tracing_disabled(True)
                 return;
             }
 
+            // Check if Tavily API key is available
+            const configCheck = checkConfig();
+            const tavilyApiKey = configCheck.tavilyAvailable ? window.APP_CONFIG.TAVILY_API_KEY : null;
+
             // Disable button during execution
             document.getElementById('runBtn').disabled = true;
             showRunning("Running Python code");
@@ -424,6 +486,11 @@ set_tracing_disabled(True)
             try {
                 logAgent("🤖 Setting up agent and running...");
                 logAgent(`Server: ${baseUrl} | Model: ${modelName}`);
+                if (tavilyApiKey) {
+                    logAgent("Tavily search enabled", 'success');
+                } else {
+                    logAgent("Tavily search disabled (no API key)", 'warning');
+                }
                 logAgent(`Prompt: "${prompt}"`);
 
                 // Run the agent and print everything in Python
@@ -443,6 +510,7 @@ from agents import (
 )
 from markdownify import markdownify
 from requests.exceptions import RequestException
+from tavily.tavily import TavilyClient
 
 def _truncate_content(content: str, max_length: int) -> str:
     if len(content) <= max_length:
@@ -459,11 +527,12 @@ def count_character_occurrences(word: str, char: str):
     return word.count(char)
 
 @function_tool
-def visit_webpage(url: str) -> str:
+def visit_webpage(url: str, max_length: int = -1) -> str:
     """Visits a webpage at the given url and reads its content as a markdown string. Use this to browse webpages.
 
     Args:
         url: The url of the webpage to visit.
+        max_length: The maximum number of characters of text that can be returned (default is -1 i.e. full webpage is returned)
 
     """
     try:
@@ -474,11 +543,50 @@ def visit_webpage(url: str) -> str:
 
         markdown_content = re.sub(r"\\n{2,}", "\\n", markdown_content)
 
-        return _truncate_content(markdown_content, 10000)
+        if max_length == -1:
+            return str(markdown_content)
+        return _truncate_content(markdown_content, max_length)
     except RequestException as e:
         return f"Error fetching the webpage: {e!s}"
     except Exception as e:
         return f"An unexpected error occurred: {e!s}"
+
+
+@function_tool
+def search_tavily(query: str, include_images: bool = False) -> str:
+    """Perform a Tavily web search based on your query and return the top search results.
+
+    See https://blog.tavily.com/getting-started-with-the-tavily-search-api for more information.
+
+    Args:
+        query (str): The search query to perform.
+        include_images (bool): Whether to include images in the results.
+
+    Returns:
+        The top search results as a formatted string.
+
+    """
+    api_key='${tavilyApiKey ? tavilyApiKey.replace(/'/g, "\\'") : ""}'
+
+    if not api_key:
+        return "TAVILY_API_KEY not configured in config.js."
+    try:
+        client = TavilyClient(api_key)
+        response = client.search(query, include_images=include_images)
+        results = response.get("results", [])
+        output = []
+        for result in results:
+            output.append(
+                f"[{result.get('title', 'No Title')}]({result.get('url', '#')})\\n{result.get('content', '')}"
+            )
+        if include_images and "images" in response:
+            output.append("\\nImages:")
+            for image in response["images"]:
+                output.append(image)
+        return "\\n\\n".join(output) if output else "No results found."
+    except Exception as e:
+        return f"Error performing Tavily search: {e!s}"
+
 
 async def test_agent():
     print("=== STARTING AGENT TEST ===")
@@ -491,10 +599,14 @@ async def test_agent():
         )
         set_default_openai_client(external_client)
 
+        # Build tools list conditionally
+        tools = [count_character_occurrences, visit_webpage]
+        ${tavilyApiKey ? 'tools.append(search_tavily)' : '# search_tavily tool not added (no API key)'}
+
         agent = Agent(
             name="Tool caller",
             instructions="You are a helpful agent. Use the available tools to answer the questions.",
-            tools=[count_character_occurrences, visit_webpage],
+            tools=tools,
             model=OpenAIChatCompletionsModel(
                 model="${modelName.replace(/'/g, "\\'")}",
                 openai_client=external_client,
