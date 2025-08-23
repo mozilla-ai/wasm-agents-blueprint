@@ -287,7 +287,7 @@
                 <button onclick="setPrompt('How many times does the letter r occur in the word strawrberrry?')">Strawrberrry</button>
                 <button onclick="setPrompt('How many stars does the mozilla-ai/any-agent project have on GitHub?')">GitHub stars</button>
                 <button onclick="setPrompt('What is the title of the latest post on https:\/\/aittalam.github.io, when was it published, what is it about, and what is the absolute URL of the image at the beginning of the post?\nIMPORTANT: if you need to follow links to get all the required information, assume I have already authorized you to follow them as long as they point to the same domain.')">Blog post</button>
-                <button onclick="setPrompt('What are 5 tv shows that are trending in 2025? Please provide the name of the show, the exact release date, the genre, and a brief description of the show.\nIMPORTANT: if you need to follow links to get all the required information, assume I have already authorized you to follow them. Always download full webpage contents.')">Trending TV Shows</button>
+                <button onclick="setPrompt('What are 5 tv shows that are trending in 2025? Please provide the name of the show, the exact release date, the genre, and a brief description of the show.\nIMPORTANT: if you need to follow links to get all the required information, assume I have already authorized you to follow them.')">Trending TV Shows</button>
             </div>
         </div>
 
@@ -358,7 +358,7 @@
         function setLMStudioDefaults() {
             document.getElementById('baseUrl').value = 'http://localhost:1234/v1';
             document.getElementById('apiKey').value = 'lmstudio';
-            document.getElementById('modelName').value = 'mistralai/devstral-small-2507';
+            document.getElementById('modelName').value = 'qwen/qwen3-8b';
         }
 
         function logToElement(message, type = 'info', element_id) {
@@ -527,15 +527,12 @@ def count_character_occurrences(word: str, char: str):
     return word.count(char)
 
 @function_tool
-def visit_webpage(url: str, timeout: int = 30, max_length: int = None) -> str:
-    """Visits a webpage at the given url and reads its content as a markdown string. Use this to browse webpages.
+def visit_webpage(url: str, timeout: int = 30) -> str:
+    """Visits a webpage at the given url and returns its content as a markdown string. Use this to browse webpages.
 
     Args:
         url: The url of the webpage to visit.
         timeout: The timeout in seconds for the request.
-        max_length: The maximum number of characters of text that can be returned.
-                    If not provided, the full webpage is returned.
-
     """
     try:
         response = requests.get(url, timeout=timeout)
@@ -545,16 +542,12 @@ def visit_webpage(url: str, timeout: int = 30, max_length: int = None) -> str:
 
         markdown_content = re.sub(r"\\n{2,}", "\\n", markdown_content)
 
-        if max_length:
-            return _truncate_content(markdown_content, max_length)
-
         return str(markdown_content)
 
     except RequestException as e:
         return f"Error fetching the webpage: {e!s}"
     except Exception as e:
         return f"An unexpected error occurred: {e!s}"
-
 
 @function_tool
 def search_tavily(query: str, include_images: bool = False) -> str:
