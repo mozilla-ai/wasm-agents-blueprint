@@ -363,6 +363,28 @@
         <div id="initOutput">Click "Initialize Pyodide Environment" to set up the Python environment...</div>
 
         <div class="server-config">
+            <h3>🔧 Tools Configuration</h3>
+            <div class="input-group">
+                <label for="mcpdUrl">mcpd Server URL:</label>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="text" id="mcpdUrl" class="slim-input" value="http://localhost:8090" placeholder="Enter mcpd server URL" style="flex: 1;">
+                    <span id="mcpdStatus" style="font-size: 16px;">🔄</span>
+                    <a href="#" id="mcpdDocsLink" target="_blank" style="font-size: 12px; display: none;">📖 API Docs</a>
+                </div>
+            </div>
+            <button onclick="refreshMcpdStatus()" style="background: #6c757d; font-size: 12px; padding: 6px 12px;">🔄 Refresh Status</button>
+
+            <div style="margin-top: 15px;">
+                <div style="cursor: pointer; user-select: none;" onclick="toggleToolsList()">
+                    <span id="toolsToggle">▶</span> <strong>Available Tools</strong> <span id="toolsCount" style="color: #6c757d; font-size: 12px;"></span>
+                </div>
+                <div id="toolsList" style="display: none; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; max-height: 200px; overflow-y: auto;">
+                    <div id="toolsContent">Click "Refresh Status" to load tools...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="server-config">
             <h3>🔗 Local LLM Server Configuration</h3>
             <div class="input-group">
                 <label for="baseUrl">Base URL:</label>
@@ -412,6 +434,7 @@
         let isPyodideReady = false;
         let lastAgentResponse = '';
         let isMarkdownView = false;
+        let toolsListExpanded = false;
 
         function showRunning(message = "Python running") {
             const indicator = document.getElementById('runningIndicator');
@@ -475,7 +498,7 @@
             document.getElementById('agentOutput').textContent = '';
             document.getElementById('markdownOutput').style.display = 'none';
             document.getElementById('markdownBtn').disabled = true;
-            document.getElementById('markdownBtn').textContent = '📄 View agent response as markdown';
+            document.getElementById('markdownBtn').textContent = '📄 View response as markdown';
             lastAgentResponse = '';
             isMarkdownView = false;
         }
@@ -494,7 +517,7 @@
                 // Switch back to log view
                 agentOutput.style.display = 'block';
                 markdownOutput.style.display = 'none';
-                markdownBtn.textContent = '📄 View agent response as markdown';
+                markdownBtn.textContent = '📄 View response as markdown';
                 isMarkdownView = false;
             } else {
                 // Switch to markdown view
@@ -504,19 +527,176 @@
                     markdownOutput.innerHTML = htmlContent;
                     agentOutput.style.display = 'none';
                     markdownOutput.style.display = 'block';
-                    markdownBtn.textContent = '📄 View full log';
+                    markdownBtn.textContent = '📄 View response as log';
                     isMarkdownView = true;
                     markdownOutput.scrollIntoView({ behavior: 'smooth' });
                 } catch (error) {
                     markdownOutput.innerHTML = `<p><strong>Error rendering markdown:</strong> ${error.message}</p><pre>${lastAgentResponse}</pre>`;
                     agentOutput.style.display = 'none';
                     markdownOutput.style.display = 'block';
-                    markdownBtn.textContent = '📄 View full log';
+                    markdownBtn.textContent = '📄 View response as log';
                     isMarkdownView = true;
                     markdownOutput.scrollIntoView({ behavior: 'smooth' });
                 }
             }
         }
+
+        function toggleToolsList() {
+            const toolsList = document.getElementById('toolsList');
+            const toolsToggle = document.getElementById('toolsToggle');
+
+            toolsListExpanded = !toolsListExpanded;
+
+            if (toolsListExpanded) {
+                toolsList.style.display = 'block';
+                toolsToggle.textContent = '▼';
+            } else {
+                toolsList.style.display = 'none';
+                toolsToggle.textContent = '▶';
+            }
+        }
+
+        async function refreshMcpdStatus() {
+            const mcpdUrl = document.getElementById('mcpdUrl').value.trim();
+            const statusIcon = document.getElementById('mcpdStatus');
+            const docsLink = document.getElementById('mcpdDocsLink');
+            const toolsContent = document.getElementById('toolsContent');
+            const toolsCount = document.getElementById('toolsCount');
+
+            if (!mcpdUrl) {
+                statusIcon.textContent = '❓';
+                statusIcon.title = 'No URL provided';
+                docsLink.style.display = 'none';
+                toolsContent.innerHTML = 'No mcpd URL provided';
+                toolsCount.textContent = '';
+                return;
+            }
+
+            statusIcon.textContent = '🔄';
+            statusIcon.title = 'Checking status...';
+            docsLink.style.display = 'none';
+            toolsContent.innerHTML = 'Checking server status...';
+            toolsCount.textContent = '';
+
+            try {
+                // First check if server is reachable by getting servers list
+                const serversResponse = await fetch(`${mcpdUrl}/api/v1/servers`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    signal: AbortSignal.timeout(5000) // 5 second timeout
+                });
+
+                if (!serversResponse.ok) {
+                    throw new Error(`Server responded with ${serversResponse.status}: ${serversResponse.statusText}`);
+                }
+
+                const servers = await serversResponse.json();
+
+                statusIcon.textContent = '✅';
+                statusIcon.title = 'mcpd server is running';
+                docsLink.href = `${mcpdUrl}/docs`;
+                docsLink.style.display = 'inline';
+
+                // Now get tools for each server
+                let totalTools = 0;
+                let toolsHtml = '';
+
+                if (!servers || servers.length === 0) {
+                    toolsHtml = '<em>No MCP servers registered</em>';
+                } else {
+                    for (const server of servers) {
+                        try {
+                            const toolsResponse = await fetch(`${mcpdUrl}/api/v1/servers/${encodeURIComponent(server)}/tools`, {
+                                method: 'GET',
+                                headers: { 'Accept': 'application/json' },
+                                signal: AbortSignal.timeout(3000)
+                            });
+
+                            if (toolsResponse.ok) {
+                                const tools_response = await toolsResponse.json();
+                                const tools = tools_response.tools
+                                totalTools += tools.length;
+
+                                toolsHtml += `<div style="margin-bottom: 15px;">`;
+                                toolsHtml += `<div style="font-weight: bold; color: #007cba; margin-bottom: 5px;">📡 ${server}</div>`;
+
+                                if (tools.length === 0) {
+                                    toolsHtml += `<div style="margin-left: 15px; color: #6c757d; font-style: italic;">No tools available</div>`;
+                                } else {
+                                    for (const tool of tools) {
+                                        toolsHtml += `<div style="margin-left: 15px; margin-bottom: 3px;">`;
+                                        toolsHtml += `<strong>🔧 ${tool.name}</strong>`;
+                                        if (tool.description) {
+                                            toolsHtml += `<br><span style="font-size: 12px; color: #6c757d; margin-left: 15px;">${tool.description}</span>`;
+                                        }
+                                        toolsHtml += `</div>`;
+                                    }
+                                }
+                                toolsHtml += `</div>`;
+                            } else {
+                                toolsHtml += `<div style="margin-bottom: 15px;">`;
+                                toolsHtml += `<div style="font-weight: bold; color: #dc3545;">📡 ${server} (Error loading tools)</div>`;
+                                toolsHtml += `</div>`;
+                            }
+                        } catch (toolsError) {
+                            toolsHtml += `<div style="margin-bottom: 15px;">`;
+                            toolsHtml += `<div style="font-weight: bold; color: #dc3545;">📡 ${server} (Connection error)</div>`;
+                            toolsHtml += `</div>`;
+                        }
+                    }
+                }
+
+                // Add local Python tools section
+                toolsHtml += `<div style="margin-bottom: 15px; border-top: 1px solid #dee2e6; padding-top: 15px;">`;
+                toolsHtml += `<div style="font-weight: bold; color: #28a745; margin-bottom: 5px;">🐍 Local Python Tools</div>`;
+                toolsHtml += `<div style="margin-left: 15px; margin-bottom: 3px;">`;
+                toolsHtml += `<strong>🔧 count_character_occurrences</strong>`;
+                toolsHtml += `<br><span style="font-size: 12px; color: #6c757d; margin-left: 15px;">Count occurrences of a character in a word</span>`;
+                toolsHtml += `</div>`;
+                toolsHtml += `<div style="margin-left: 15px; margin-bottom: 3px;">`;
+                toolsHtml += `<strong>🔧 visit_webpage</strong>`;
+                toolsHtml += `<br><span style="font-size: 12px; color: #6c757d; margin-left: 15px;">Visit a webpage and return its content as markdown</span>`;
+                toolsHtml += `</div>`;
+                toolsHtml += `</div>`;
+
+                toolsContent.innerHTML = toolsHtml || '<em>No tools found</em>';
+                toolsCount.textContent = totalTools > 0 ? `(${totalTools} MCP tools + 2 local tools)` : '(2 local tools only)';
+
+            } catch (error) {
+                statusIcon.textContent = '❌';
+                statusIcon.title = `mcpd server unreachable: ${error.message}`;
+                docsLink.style.display = 'none';
+
+                // Show warning but still list local tools
+                toolsContent.innerHTML = `
+                    <div style="color: #856404; background: #fff3cd; padding: 8px; border-radius: 3px; margin-bottom: 10px; font-size: 12px;">
+                        ⚠️ mcpd server is not reachable, but local Python tools will still work.
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="font-weight: bold; color: #28a745; margin-bottom: 5px;">🐍 Local Python Tools</div>
+                        <div style="margin-left: 15px; margin-bottom: 3px;">
+                            <strong>🔧 count_character_occurrences</strong>
+                            <br><span style="font-size: 12px; color: #6c757d; margin-left: 15px;">Count occurrences of a character in a word</span>
+                        </div>
+                        <div style="margin-left: 15px; margin-bottom: 3px;">
+                            <strong>🔧 visit_webpage</strong>
+                            <br><span style="font-size: 12px; color: #6c757d; margin-left: 15px;">Visit a webpage and return its content as markdown</span>
+                        </div>
+                    </div>
+                `;
+                toolsCount.textContent = '(2 local tools only)';
+            }
+        }
+
+        // Auto-refresh mcpd status when URL changes
+        document.addEventListener('DOMContentLoaded', function() {
+            const mcpdUrlInput = document.getElementById('mcpdUrl');
+            if (mcpdUrlInput) {
+                mcpdUrlInput.addEventListener('change', refreshMcpdStatus);
+                // Initial status check
+                refreshMcpdStatus();
+            }
+        });
 
         async function initializePyodide() {
             // Disable init button during setup
@@ -598,7 +778,13 @@ set_tracing_disabled(True)
             // Disable button during execution
             document.getElementById('runBtn').disabled = true;
             document.getElementById('markdownBtn').disabled = true;
-            document.getElementById('markdownOutput').style.display = 'none';
+            // Reset to log view when running new agent
+            if (isMarkdownView) {
+                document.getElementById('agentOutput').style.display = 'block';
+                document.getElementById('markdownOutput').style.display = 'none';
+                document.getElementById('markdownBtn').textContent = '📄 View response as markdown';
+                isMarkdownView = false;
+            }
             lastAgentResponse = '';
             showRunning("Running Python code");
 
