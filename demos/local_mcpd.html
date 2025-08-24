@@ -3,6 +3,7 @@
 <head>
     <title>Tool-Calling Agent With Local LLM</title>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
     <meta content="utf-8" http-equiv="encoding">
     <style>
@@ -119,6 +120,17 @@
             background: #ccc;
             cursor: not-allowed;
         }
+
+        .markdown-btn {
+            background: #28a745;
+        }
+        .markdown-btn:hover {
+            background: #218838;
+        }
+        .markdown-btn:disabled {
+            background: #ccc;
+        }
+
         #initOutput, #agentOutput {
             background: #f8f9fa;
             border: 2px solid #e9ecef;
@@ -136,6 +148,121 @@
         #initOutput {
             margin-bottom: 20px;
         }
+
+        #markdownOutput {
+            background: white;
+            border: 2px solid #007cba;
+            border-radius: 5px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 150px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        /* Markdown styling */
+        #markdownOutput h1, #markdownOutput h2, #markdownOutput h3,
+        #markdownOutput h4, #markdownOutput h5, #markdownOutput h6 {
+            color: #333;
+            margin-top: 24px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+
+        #markdownOutput h1 { font-size: 2em; border-bottom: 1px solid #eaecef; padding-bottom: 10px; }
+        #markdownOutput h2 { font-size: 1.5em; border-bottom: 1px solid #eaecef; padding-bottom: 8px; }
+        #markdownOutput h3 { font-size: 1.25em; }
+
+        #markdownOutput p {
+            margin-bottom: 16px;
+            margin-top: 0;
+        }
+
+        #markdownOutput ul, #markdownOutput ol {
+            padding-left: 2em;
+            margin-bottom: 16px;
+        }
+
+        #markdownOutput li {
+            margin-bottom: 4px;
+        }
+
+        #markdownOutput blockquote {
+            padding: 0 16px;
+            margin: 0 0 16px 0;
+            color: #6a737d;
+            border-left: 4px solid #dfe2e5;
+        }
+
+        #markdownOutput code {
+            padding: 2px 4px;
+            font-size: 85%;
+            background-color: rgba(27,31,35,0.05);
+            border-radius: 3px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+
+        #markdownOutput pre {
+            padding: 16px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        #markdownOutput pre code {
+            padding: 0;
+            background-color: transparent;
+            border-radius: 0;
+        }
+
+        #markdownOutput table {
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            width: 100%;
+        }
+
+        #markdownOutput table th,
+        #markdownOutput table td {
+            padding: 6px 13px;
+            border: 1px solid #dfe2e5;
+        }
+
+        #markdownOutput table th {
+            background-color: #f6f8fa;
+            font-weight: 600;
+        }
+
+        #markdownOutput a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+
+        #markdownOutput a:hover {
+            text-decoration: underline;
+        }
+
+        #markdownOutput img {
+            max-width: 100%;
+            height: auto;
+            margin: 16px 0;
+        }
+
+        #markdownOutput hr {
+            height: 4px;
+            padding: 0;
+            margin: 24px 0;
+            background-color: #e1e4e8;
+            border: 0;
+        }
+
         .status {
             padding: 10px;
             border-radius: 5px;
@@ -271,15 +398,20 @@
 
         <button onclick="runAgent()" id="runBtn" disabled>🚀 Run Agent</button>
         <button onclick="clearAgentOutput()" id="clearAgentBtn" disabled>🗑️ Clear Agent Output</button>
+        <button onclick="toggleMarkdownView()" id="markdownBtn" class="markdown-btn" disabled>📄 View response as markdown</button>
 
         <div class="running-indicator" id="runningIndicator">🐍 Running Python code...</div>
 
         <div id="agentOutput">Initialize the Pyodide environment first, then click "Run Agent" to test the agent</div>
+
+        <div id="markdownOutput"></div>
     </div>
 
     <script>
         let pyodide;
         let isPyodideReady = false;
+        let lastAgentResponse = '';
+        let isMarkdownView = false;
 
         function showRunning(message = "Python running") {
             const indicator = document.getElementById('runningIndicator');
@@ -311,7 +443,6 @@
             document.getElementById('modelName').value = 'qwen/qwen3-8b';
         }
 
-
         function logToElement(message, type = 'info', element_id) {
             const output = document.getElementById(element_id);
             const timestamp = new Date().toLocaleTimeString();
@@ -342,6 +473,49 @@
 
         function clearAgentOutput() {
             document.getElementById('agentOutput').textContent = '';
+            document.getElementById('markdownOutput').style.display = 'none';
+            document.getElementById('markdownBtn').disabled = true;
+            document.getElementById('markdownBtn').textContent = '📄 View agent response as markdown';
+            lastAgentResponse = '';
+            isMarkdownView = false;
+        }
+
+        function toggleMarkdownView() {
+            if (!lastAgentResponse) {
+                alert('No agent response to display as markdown');
+                return;
+            }
+
+            const agentOutput = document.getElementById('agentOutput');
+            const markdownOutput = document.getElementById('markdownOutput');
+            const markdownBtn = document.getElementById('markdownBtn');
+
+            if (isMarkdownView) {
+                // Switch back to log view
+                agentOutput.style.display = 'block';
+                markdownOutput.style.display = 'none';
+                markdownBtn.textContent = '📄 View agent response as markdown';
+                isMarkdownView = false;
+            } else {
+                // Switch to markdown view
+                try {
+                    // Convert markdown to HTML using marked.js
+                    const htmlContent = marked.parse(lastAgentResponse);
+                    markdownOutput.innerHTML = htmlContent;
+                    agentOutput.style.display = 'none';
+                    markdownOutput.style.display = 'block';
+                    markdownBtn.textContent = '📄 View full log';
+                    isMarkdownView = true;
+                    markdownOutput.scrollIntoView({ behavior: 'smooth' });
+                } catch (error) {
+                    markdownOutput.innerHTML = `<p><strong>Error rendering markdown:</strong> ${error.message}</p><pre>${lastAgentResponse}</pre>`;
+                    agentOutput.style.display = 'none';
+                    markdownOutput.style.display = 'block';
+                    markdownBtn.textContent = '📄 View full log';
+                    isMarkdownView = true;
+                    markdownOutput.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
         }
 
         async function initializePyodide() {
@@ -423,6 +597,9 @@ set_tracing_disabled(True)
 
             // Disable button during execution
             document.getElementById('runBtn').disabled = true;
+            document.getElementById('markdownBtn').disabled = true;
+            document.getElementById('markdownOutput').style.display = 'none';
+            lastAgentResponse = '';
             showRunning("Running Python code");
 
             try {
@@ -551,12 +728,17 @@ final_result
                 // Display the result
                 if (typeof result === 'string' && result.length > 0 && !result.startsWith('Error:')) {
                     const formattedResult = result.replace(/\\n/g, '\n');
+                    lastAgentResponse = formattedResult; // Store for markdown rendering
+
                     logAgent("🎉 Agent code ran successfully! Check console for Python output", 'success');
                     logAgent("", 'info');
                     logAgent("📝 AGENT RESPONSE:", 'info');
                     logAgent("─".repeat(50), 'info');
                     logAgent("\n"+formattedResult, 'info');
                     logAgent("─".repeat(50), 'info');
+
+                    // Enable markdown button
+                    document.getElementById('markdownBtn').disabled = false;
                 } else {
                     logAgent("❌ Agent execution failed or returned empty result", 'error');
                     logAgent(`Result: ${result}`, 'error');
