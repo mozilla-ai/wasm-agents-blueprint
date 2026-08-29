@@ -404,6 +404,16 @@ set_tracing_disabled(True)
                 return;
             }
 
+            if (prompt.length > 10000) {
+                logAgent("Prompt exceeds 10000 characters", 'error');
+                return;
+            }
+
+            if (instructions.length > 5000) {
+                logAgent("Instructions exceed 5000 characters", 'error');
+                return;
+            }
+
             // Disable button during execution
             document.getElementById('runBtn').disabled = true;
             showRunning("Running Python code");
@@ -413,6 +423,13 @@ set_tracing_disabled(True)
                 logAgent(`Instructions: "${instructions}"`);
                 logAgent(`Prompt: "${prompt}"`);
 
+                // Pass user-controlled values as data via Pyodide globals, not
+                // string interpolation — the Python source below no longer embeds
+                // any of this text, so it can't be used to break out of a string.
+                pyodide.globals.set('user_prompt', prompt);
+                pyodide.globals.set('agent_instructions', instructions);
+                pyodide.globals.set('openai_api_key', apiKey);
+
                 // Run the agent and print everything in Python
                 const result = await pyodide.runPythonAsync(`
 ###### YOUR PYTHON AGENT CODE GOES HERE ######
@@ -421,8 +438,8 @@ import asyncio
 import os
 from agents import Agent, Runner, ModelSettings
 
-# Set API key in environment
-os.environ['OPENAI_API_KEY'] = "${apiKey}"
+# API key is read from a Pyodide global, not interpolated into source
+os.environ['OPENAI_API_KEY'] = openai_api_key
 
 async def test_agent():
     print("=== STARTING AGENT TEST ===")
@@ -431,7 +448,7 @@ async def test_agent():
         print("Creating agent...")
         agent = Agent(
             name="Assistant",
-            instructions="""${instructions.replace(/"/g, '\\"')}""",
+            instructions=agent_instructions,
             model_settings=ModelSettings(
                 extra_args={"timeout": 30}
             )
@@ -440,7 +457,7 @@ async def test_agent():
 
         # Run the agent
         print("Running agent...")
-        result = await Runner.run(agent, """${prompt.replace(/"/g, '\\"')}""")
+        result = await Runner.run(agent, user_prompt)
         print(f"Agent run completed!")
         print(f"Result type: {type(result)}")
         print(f"Result: {result}")

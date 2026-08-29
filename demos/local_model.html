@@ -475,6 +475,26 @@ set_tracing_disabled(True)
                 return;
             }
 
+            if (prompt.length > 10000) {
+                logAgent("Prompt exceeds 10000 characters", 'error');
+                return;
+            }
+
+            try {
+                const parsedUrl = new URL(baseUrl);
+                if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+                    throw new Error('bad protocol');
+                }
+            } catch {
+                logAgent("Base URL must be a valid http/https URL", 'error');
+                return;
+            }
+
+            if (apiKey.length > 500 || modelName.length > 200) {
+                logAgent("API key or model name is too long", 'error');
+                return;
+            }
+
             // Check if Tavily API key is available
             const configCheck = checkConfig();
             const tavilyApiKey = configCheck.tavilyAvailable ? window.APP_CONFIG.TAVILY_API_KEY : null;
@@ -492,6 +512,16 @@ set_tracing_disabled(True)
                     logAgent("Tavily search disabled (no API key)", 'warning');
                 }
                 logAgent(`Prompt: "${prompt}"`);
+
+                // Pass user-controlled values as data via Pyodide globals, not
+                // string interpolation — the Python source below no longer embeds
+                // any of this text, so it can't be used to break out of a string.
+                pyodide.globals.set('user_prompt', prompt);
+                pyodide.globals.set('base_url', baseUrl);
+                pyodide.globals.set('local_api_key', apiKey);
+                pyodide.globals.set('model_name', modelName);
+                pyodide.globals.set('tavily_api_key', tavilyApiKey || '');
+                pyodide.globals.set('tavily_enabled', Boolean(tavilyApiKey));
 
                 // Run the agent and print everything in Python
                 const result = await pyodide.runPythonAsync(`
@@ -563,7 +593,7 @@ def search_tavily(query: str, include_images: bool = False) -> str:
         The top search results as a formatted string.
 
     """
-    api_key='${tavilyApiKey ? tavilyApiKey.replace(/'/g, "\\'") : ""}'
+    api_key = tavily_api_key
 
     if not api_key:
         return "TAVILY_API_KEY not configured in config.js."
@@ -591,21 +621,22 @@ async def test_agent():
         # Create agent
         print("Creating agent...")
         external_client = AsyncOpenAI(
-            base_url = '${baseUrl.replace(/'/g, "\\'")}',
-            api_key='${apiKey.replace(/'/g, "\\'")}', # required, but may be unused depending on server
+            base_url=base_url,
+            api_key=local_api_key, # required, but may be unused depending on server
         )
         set_default_openai_client(external_client)
 
         # Build tools list conditionally
         tools = [count_character_occurrences, visit_webpage]
-        ${tavilyApiKey ? 'tools.append(search_tavily)' : '# search_tavily tool not added (no API key)'}
+        if tavily_enabled:
+            tools.append(search_tavily)
 
         agent = Agent(
             name="Tool caller",
             instructions="You are a helpful agent. Use the available tools to answer the questions.",
             tools=tools,
             model=OpenAIChatCompletionsModel(
-                model="${modelName.replace(/'/g, "\\'")}",
+                model=model_name,
                 openai_client=external_client,
             ),
             model_settings=ModelSettings(
@@ -613,11 +644,11 @@ async def test_agent():
             )
         )
         print(f"Agent created: {agent}")
-        print(f"Using server: ${baseUrl} with model: ${modelName}")
+        print(f"Using server: {base_url} with model: {model_name}")
 
         # Run the agent
         print("Running agent...")
-        result = await Runner.run(agent, """${prompt.replace(/"/g, '\\"')}""",  max_turns=20)
+        result = await Runner.run(agent, user_prompt, max_turns=20)
         print(f"Agent run completed!")
         print(f"Result type: {type(result)}")
         print(f"Result: {result}")

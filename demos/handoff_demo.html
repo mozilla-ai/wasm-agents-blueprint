@@ -447,6 +447,21 @@ set_tracing_disabled(True)
                 return;
             }
 
+            if (prompt.length > 10000) {
+                logAgent("Prompt exceeds 10000 characters", 'error');
+                return;
+            }
+
+            if (agent1Name.length > 200 || agent2Name.length > 200) {
+                logAgent("Agent names exceed 200 characters", 'error');
+                return;
+            }
+
+            if (agent1Instructions.length > 5000 || agent2Instructions.length > 5000) {
+                logAgent("Agent instructions exceed 5000 characters", 'error');
+                return;
+            }
+
             // Disable button during execution
             document.getElementById('runBtn').disabled = true;
             showRunning("Running Python code");
@@ -457,6 +472,16 @@ set_tracing_disabled(True)
                 logAgent(`Agent 2: "${agent2Name}" - ${agent2Instructions}`);
                 logAgent(`Prompt: "${prompt}"`);
 
+                // Pass user-controlled values as data via Pyodide globals, not
+                // string interpolation — the Python source below no longer embeds
+                // any of this text, so it can't be used to break out of a string.
+                pyodide.globals.set('user_prompt', prompt);
+                pyodide.globals.set('openai_api_key', apiKey);
+                pyodide.globals.set('agent1_name', agent1Name);
+                pyodide.globals.set('agent1_instructions', agent1Instructions);
+                pyodide.globals.set('agent2_name', agent2Name);
+                pyodide.globals.set('agent2_instructions', agent2Instructions);
+
                 // Run the agent and print everything in Python
                 const result = await pyodide.runPythonAsync(`
 ###### YOUR PYTHON AGENT CODE GOES HERE ######
@@ -465,8 +490,8 @@ import asyncio
 import os
 from agents import Agent, Runner, ModelSettings
 
-# Set API key in environment
-os.environ['OPENAI_API_KEY'] = "${apiKey}"
+# API key is read from a Pyodide global, not interpolated into source
+os.environ['OPENAI_API_KEY'] = openai_api_key
 
 async def test_agent():
     print("=== STARTING AGENT TEST ===")
@@ -474,16 +499,16 @@ async def test_agent():
         # Create agents
         print("Creating agents...")
         agent_1 = Agent(
-            name="${agent1Name.replace(/"/g, '\\"')}",
-            instructions="${agent1Instructions.replace(/"/g, '\\"')}",
+            name=agent1_name,
+            instructions=agent1_instructions,
             model_settings=ModelSettings(
                 extra_args={"timeout": 30}
             )
         )
 
         agent_2 = Agent(
-            name="${agent2Name.replace(/"/g, '\\"')}",
-            instructions="${agent2Instructions.replace(/"/g, '\\"')}",
+            name=agent2_name,
+            instructions=agent2_instructions,
             model_settings=ModelSettings(
                 extra_args={"timeout": 30}
             )
@@ -501,7 +526,7 @@ async def test_agent():
 
         # Run the agent
         print("Running agent...")
-        result = await Runner.run(triage_agent, """${prompt.replace(/"/g, '\\"')}""")
+        result = await Runner.run(triage_agent, user_prompt)
         print(f"Agent run completed!")
         print(f"Result type: {type(result)}")
         print(f"Result: {result}")
