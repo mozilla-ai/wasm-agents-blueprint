@@ -397,6 +397,11 @@ set_tracing_disabled(True)
                 return;
             }
 
+            if (prompt.length > 10000) {
+                logAgent("Prompt exceeds 10000 characters", 'error');
+                return;
+            }
+
             // Disable button during execution
             document.getElementById('runBtn').disabled = true;
             showRunning("Running Python code");
@@ -404,6 +409,12 @@ set_tracing_disabled(True)
             try {
                 logAgent("🤖 Setting up agent and running...");
                 logAgent(`Prompt: "${prompt}"`);
+
+                // Pass user-controlled values as data via Pyodide globals, not
+                // string interpolation — the Python source below no longer embeds
+                // any of this text, so it can't be used to break out of a string.
+                pyodide.globals.set('user_prompt', prompt);
+                pyodide.globals.set('openai_api_key', apiKey);
 
                 // Run the agent and print everything in Python
                 const result = await pyodide.runPythonAsync(`
@@ -416,8 +427,8 @@ from agents import Agent, Runner, function_tool, ModelSettings
 from markdownify import markdownify
 from requests.exceptions import RequestException
 
-# Set API key in environment
-os.environ['OPENAI_API_KEY'] = "${apiKey}"
+# API key is read from a Pyodide global, not interpolated into source
+os.environ['OPENAI_API_KEY'] = openai_api_key
 
 def _truncate_content(content: str, max_length: int) -> str:
     if len(content) <= max_length:
@@ -479,7 +490,7 @@ async def test_agent():
 
         # Run the agent
         print("Running agent...")
-        result = await Runner.run(agent, """${prompt.replace(/"/g, '\\"')}""")
+        result = await Runner.run(agent, user_prompt)
         print(f"Agent run completed!")
         print(f"Result type: {type(result)}")
         print(f"Result: {result}")
